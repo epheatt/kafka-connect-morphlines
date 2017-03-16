@@ -1,0 +1,85 @@
+#
+# Copyright © 2017 Eric Pheatt (eric.pheatt@gmail.com)
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+#
+
+zookeeper:
+  image: confluentinc/cp-zookeeper:3.2.0
+  hostname: zookeeper
+  ports:
+    - "2181:2181"
+  environment:
+    - "ZOOKEEPER_CLIENT_PORT=2181" 
+kafka:
+  image: confluentinc/cp-kafka:3.2.0
+  hostname: kafka
+  ports:
+    - "9092:9092"
+  links:
+    - "zookeeper:zookeeper"
+  environment:
+    - "KAFKA_ZOOKEEPER_CONNECT=zookeeper:2181"
+    - "KAFKA_ADVERTISED_LISTENERS=PLAINTEXT://kafka:9092"
+    - "KAFKA_ADVERTISED_HOST_NAME=kafka"
+solr_cloud:
+  image: solr
+  hostname: solr
+  command: "bash -c '/opt/solr/bin/solr start -f -z zookeeper:2181 -h solr'"
+  ports:
+    - "8983:8983"
+  links:
+    - "zookeeper:zookeeper"
+  environment:
+    - "ZOOKEEPER_PORT_2181_TCP_ADDR=zookeeper"
+    - "ZOOKEEPER_PORT_2181_TCP_PORT=2181"
+schema-registry:
+  image: confluentinc/cp-schema-registry
+  hostname: schema-registry
+#  entrypoint: "bash -c 'sleep 10;/usr/local/bin/schema-registry-docker.sh'"
+  ports:
+    - "8081:8081"
+  links:
+    - "zookeeper:zookeeper"
+    - "kafka:kafka"
+  environment:
+    - "SCHEMA_REGISTRY_KAFKASTORE_CONNECTION_URL=zookeeper:2181"
+    - "SCHEMA_REGISTRY_KAFKASTORE_TOPIC_REPLICATION_FACTOR=1"
+    - "SCHEMA_REGISTRY_HOST_NAME=schema-registry"
+    - "SCHEMA_REGISTRY_DEBUG=true"
+kafka-connect:
+  image: confluentinc/cp-kafka-connect:3.2.0
+  ports:
+    - "8082:8082"
+  links:
+    - "kafka:kafka"
+    - "schema-registry:schema-registry"
+  volumes:
+    - "/Users/epheatt/dev/kafka-connect-morphlines/target/:/etc/kafka-connect/jars"
+  environment:
+    - "CONNECT_BOOTSTRAP_SERVERS=kafka:9092"
+    - "CONNECT_REST_PORT=8082"
+    - "CONNECT_REST_ADVERTISED_HOST_NAME=kafka-connect"
+    - "CONNECT_KEY_CONVERTER_SCHEMA_REGISTRY_URL=http://schema-registry:8081"
+    - "CONNECT_VALUE_CONVERTER_SCHEMA_REGISTRY_URL=http://schema-registry:8081"
+    - "CONNECT_INTERNAL_KEY_CONVERTER_SCHEMA_REGISTRY_URL=http://schema-registry:8081"
+    - "CONNECT_INTERNAL_VALUE_CONVERTER_SCHEMA_REGISTRY_URL=http://schema-registry:8081"
+    - "CONNECT_KEY_CONVERTER=io.confluent.connect.avro.AvroConverter"
+    - "CONNECT_VALUE_CONVERTER=io.confluent.connect.avro.AvroConverter"
+    - "CONNECT_INTERNAL_KEY_CONVERTER=org.apache.kafka.connect.json.JsonConverter"
+    - "CONNECT_INTERNAL_VALUE_CONVERTER=org.apache.kafka.connect.json.JsonConverter"
+    - "CONNECT_GROUP_ID=default"
+    - "CONNECT_CONFIG_STORAGE_TOPIC=default.config"
+    - "CONNECT_OFFSET_STORAGE_TOPIC=default.offsets"
+    - "CONNECT_STATUS_STORAGE_TOPIC=default.status"
+    - "CONNECT_LOG4J_ROOT_LOGLEVEL=INFO"
