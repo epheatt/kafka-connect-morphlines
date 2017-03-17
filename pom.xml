@@ -1,7 +1,7 @@
-<?xml version="1.0" encoding="ISO-8859-1"?>
+<?xml version="1.0" encoding="UTF-8"?>
 <!--
 
-    Copyright © 2017 Eric Pheatt (jcustenborder@gmail.com)
+    Copyright Â© 2017 Eric Pheatt (eric.pheatt@gmail.com)
 
     Licensed under the Apache License, Version 2.0 (the "License");
     you may not use this file except in compliance with the License.
@@ -26,7 +26,7 @@
     <name>kafka-connect-morphlines</name>
     <description>A Kafka Connect connector copying data from Kafka to Morphlines Targets.</description>
     <url>https://github.com/epheatt/kafka-connect-morphlines</url>
-    <inceptionYear>2016</inceptionYear>
+    <inceptionYear>2017</inceptionYear>
     <developers>
         <developer>
             <name>Eric Pheatt</name>
