@@ -121,7 +121,7 @@ public class MorphlineSinkTask<T extends MorphlineSinkConnectorConfig> extends S
         out.close();
         morphline = new Compiler().compile(morphlineFile, morphlineId, morphlineContext, finalChild, override.getConfig("morphlines"));
     } catch (java.io.IOException ioe) {
-        throw 
+        throw new MorphlineCompilationException("Unable to compile morphline pipeline from: " + MORPHLINE_FILE_PARAM, null);
     }
   }
   
