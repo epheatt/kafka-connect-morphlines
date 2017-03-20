@@ -102,12 +102,17 @@ public class MorphlineSinkTask<T extends MorphlineSinkConnectorConfig> extends S
         }
     } else if (morphlineFilePath.startsWith("resource:")) {
         morphlineFileConfig = ConfigFactory.parseResources(getClass(),morphlineFilePath.substring(morphlineFilePath.indexOf(":")+1));
+    } else if (morphlineFilePath.startsWith("include ")) {
+        morphlineFileConfig = ConfigFactory.parseString(morphlineFilePath);
     } else {
         morphlineFileConfig = ConfigFactory.parseResources(getClass(),morphlineFilePath);
     }
-    log.debug("MorphlineFileConfig: " + morphlineFileConfig);
+    if (morphlineFileConfig.isEmpty()) {
+        throw new MorphlineCompilationException("Invalid content from parameter: " + MORPHLINE_FILE_PARAM, null);
+    }
+    log.debug("MorphlineFileConfig Content: " + morphlineFileConfig);
     Config override = ConfigFactory.parseMap(settings);
-    log.debug("Overides: " + override);
+    log.debug("Overide Settings for Task: " + override);
     try {
         File morphlineFile = File.createTempFile("morphline", "."+morphlineId);
         morphlineFile.deleteOnExit();
@@ -116,7 +121,7 @@ public class MorphlineSinkTask<T extends MorphlineSinkConnectorConfig> extends S
         out.close();
         morphline = new Compiler().compile(morphlineFile, morphlineId, morphlineContext, finalChild, override.getConfig("morphlines"));
     } catch (java.io.IOException ioe) {
-        
+        throw 
     }
   }
   
