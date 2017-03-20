@@ -65,7 +65,7 @@ kafka-connect:
     - "kafka:kafka"
     - "schema-registry:schema-registry"
   volumes:
-    - "/Users/epheatt/dev/kafka-connect-morphlines/target/:/etc/kafka-connect/jars"
+    - "./target/:/etc/kafka-connect/jars"
   environment:
     - "CONNECT_BOOTSTRAP_SERVERS=kafka:9092"
     - "CONNECT_REST_PORT=8082"
