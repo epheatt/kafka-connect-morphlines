@@ -157,6 +157,31 @@
                     </dependency>
                 </dependencies>
             </plugin>
+	        <plugin>
+	            <groupId>org.apache.maven.plugins</groupId>
+	            <artifactId>maven-shade-plugin</artifactId>
+	            <executions>
+	                <execution>
+	                    <phase>package</phase>
+	                    <goals>
+	                        <goal>shade</goal>
+	                    </goals>
+	                    <configuration>
+	                        <shadedArtifactAttached>false</shadedArtifactAttached>
+	                        <createDependencyReducedPom>true</createDependencyReducedPom>
+	                        <relocations>
+	                            <relocation>
+	                                <pattern>com.fasterxml.jackson</pattern>
+	                                <shadedPattern>com.github.epheatt.kafka.connect.morphlines.com.fasterxml.jackson</shadedPattern>
+	                            </relocation>
+	                        </relocations>
+	                       	<transformers>
+				               <transformer implementation="org.apache.maven.plugins.shade.resource.ManifestResourceTransformer" />
+				            </transformers>
+	                    </configuration>
+	                </execution>
+	            </executions>
+	        </plugin>            
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-jar-plugin</artifactId>
@@ -170,23 +195,6 @@
                     </archive>
                 </configuration>
             </plugin>
-            <plugin>
-			  <artifactId>maven-assembly-plugin</artifactId>
-			  <configuration>
-			    <descriptorRefs>
-			      <descriptorRef>jar-with-dependencies</descriptorRef>
-			    </descriptorRefs>
-			  </configuration>
-			  <executions>
-			    <execution>
-			      <id>make-assembly</id>
-			      <phase>package</phase>
-			      <goals>
-			        <goal>single</goal>
-			      </goals>
-			    </execution>
-			  </executions>
-			</plugin>
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-compiler-plugin</artifactId>

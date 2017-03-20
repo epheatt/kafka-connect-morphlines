@@ -65,11 +65,12 @@ kafka-connect:
     - "kafka:kafka"
     - "schema-registry:schema-registry"
   volumes:
-    - "./target/:/etc/kafka-connect/jars"
+    - "/Users/epheatt/dev/kafka-connect-morphlines/target/:/etc/kafka-connect/jars"
   environment:
     - "CONNECT_BOOTSTRAP_SERVERS=kafka:9092"
     - "CONNECT_REST_PORT=8082"
     - "CONNECT_REST_ADVERTISED_HOST_NAME=kafka-connect"
+    - "CONNECT_SCHEMA_REGISTRY_URL=http://schema-registry:8081"
     - "CONNECT_KEY_CONVERTER_SCHEMA_REGISTRY_URL=http://schema-registry:8081"
     - "CONNECT_VALUE_CONVERTER_SCHEMA_REGISTRY_URL=http://schema-registry:8081"
     - "CONNECT_INTERNAL_KEY_CONVERTER_SCHEMA_REGISTRY_URL=http://schema-registry:8081"
@@ -78,6 +79,8 @@ kafka-connect:
     - "CONNECT_VALUE_CONVERTER=io.confluent.connect.avro.AvroConverter"
     - "CONNECT_INTERNAL_KEY_CONVERTER=org.apache.kafka.connect.json.JsonConverter"
     - "CONNECT_INTERNAL_VALUE_CONVERTER=org.apache.kafka.connect.json.JsonConverter"
+    - "CONNECT_INTERNAL_KEY_CONVERTER_SCHEMAS_ENABLE=false"
+    - "CONNECT_INTERNAL_VALUE_CONVERTER_SCHEMAS_ENABLE=false"
     - "CONNECT_GROUP_ID=default"
     - "CONNECT_CONFIG_STORAGE_TOPIC=default.config"
     - "CONNECT_OFFSET_STORAGE_TOPIC=default.offsets"

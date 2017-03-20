@@ -135,10 +135,9 @@ public class MorphlineSinkTask<T extends MorphlineSinkConnectorConfig> extends S
         record.put("kafkaPartition", sinkRecord.kafkaPartition());
         if (sinkRecord.key() != null) {
             record.put("kafkaKey", sinkRecord.key());
-            record.put("kafkaSchema", sinkRecord.keySchema());
-        } else {
-            record.put("kafkaSchema", sinkRecord.valueSchema());
+            record.put("kafkaKeySchema", sinkRecord.keySchema());
         }
+        record.put("kafkaValueSchema", sinkRecord.valueSchema());
         record.put(Fields.ATTACHMENT_BODY, sinkRecord.value());
         //Notifications.notifyStartSession(morphline);
         if (!morphline.process(record)) {
