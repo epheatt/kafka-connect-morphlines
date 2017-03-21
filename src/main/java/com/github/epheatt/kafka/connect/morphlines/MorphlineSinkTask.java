@@ -160,18 +160,13 @@ public class MorphlineSinkTask<T extends MorphlineSinkConnectorConfig> extends S
         record.put("kafkaKeySchema", sinkRecord.keySchema());
         record.put("kafkaValue", value);
         record.put("kafkaValueSchema", schema);
-        if (value instanceof String) {
-            //try {
-                record.put(Fields.ATTACHMENT_BODY, ((String) value).getBytes(StandardCharsets.UTF_8));
-                record.put(Fields.ATTACHMENT_CHARSET, StandardCharsets.UTF_8);
-            //} catch (java.io.UnsupportedEncodingException uee) {
-            //   ; // ignore for now 
-            //}
+        if (schema != null && schema.type() == Schema.Type.STRING) {
+            record.put(Fields.ATTACHMENT_BODY, ((String) value).getBytes(StandardCharsets.UTF_8));
         } else {
             final String payload = new String(JSON_CONVERTER.fromConnectData(sinkRecord.topic(), schema, value), StandardCharsets.UTF_8);
             record.put(Fields.ATTACHMENT_BODY, payload.getBytes(StandardCharsets.UTF_8));
-            record.put(Fields.ATTACHMENT_CHARSET, StandardCharsets.UTF_8);
         }
+        record.put(Fields.ATTACHMENT_CHARSET, StandardCharsets.UTF_8);
         //Notifications.notifyStartSession(morphline);
         if (!morphline.process(record)) {
             //Notifications.notifyRollbackTransaction(morphline);
