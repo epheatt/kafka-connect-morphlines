@@ -16,7 +16,7 @@ cp config/cloudsolr.conf target/
 docker-compose up kafka-connect
 
 curl -X POST -H "Content-Type: application/json" \
-  --data '{"name":"morphlines-solr-sink","config":{"connector.class":"com.github.epheatt.kafka.connect.morphlines.MorphlineSinkConnector", "tasks.max":1,"key.converter":"org.apache.kafka.connect.storage.StringConverter","value.converter":"org.apache.kafka.connect.storage.StringConverter","topics":"twitter","morphlines.morphlineId":"cloudsolr","morphlines.morphlineFile":"file:/etc/kafka-connect/jars/cloudsolr.conf"}}' \ 
+  --data '{"name":"morphlines-solr-sink","config":{"connector.class":"com.github.epheatt.kafka.connect.morphlines.MorphlineSinkConnector", "tasks.max":1,"key.converter":"org.apache.kafka.connect.storage.StringConverter","value.converter":"org.apache.kafka.connect.storage.StringConverter","topics":"twitter","morphlines.morphlineId":"cloudsolr","morphlines.morphlineFile":"file:/etc/kafka-connect/jars/cloudsolr.conf"}}' \
   http://0.0.0.0:8082/connectors
 
 curl -X POST -H "Content-Type: application/json" \

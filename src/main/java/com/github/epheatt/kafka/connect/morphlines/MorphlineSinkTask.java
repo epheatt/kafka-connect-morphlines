@@ -21,6 +21,7 @@ import org.apache.kafka.common.TopicPartition;
 import org.apache.kafka.connect.errors.RetriableException;
 import org.apache.kafka.connect.sink.SinkRecord;
 import org.apache.kafka.connect.sink.SinkTask;
+import org.apache.kafka.connect.data.*;
 
 import org.kitesdk.morphline.api.Command;
 import org.kitesdk.morphline.api.MorphlineCompilationException;
@@ -133,12 +134,19 @@ public class MorphlineSinkTask<T extends MorphlineSinkConnectorConfig> extends S
         Record record = new Record();
         record.put("kafkaTopic", sinkRecord.topic());
         record.put("kafkaPartition", sinkRecord.kafkaPartition());
-        if (sinkRecord.key() != null) {
-            record.put("kafkaKey", sinkRecord.key());
-            record.put("kafkaKeySchema", sinkRecord.keySchema());
-        }
+        Object value = sinkRecord.value();
+        record.put("kafkaKey", sinkRecord.key());
+        record.put("kafkaKeySchema", sinkRecord.keySchema());
         record.put("kafkaValueSchema", sinkRecord.valueSchema());
-        record.put(Fields.ATTACHMENT_BODY, sinkRecord.value());
+        record.put("kafkaValue", value);
+        if (value instanceof java.lang.String) {
+            try {
+                record.put(Fields.ATTACHMENT_BODY, ((String) value).getBytes("UTF-8"));
+                record.put(Fields.ATTACHMENT_CHARSET, "UTF-8");
+            } catch (java.io.UnsupportedEncodingException uee) {
+                ; //ignore for now
+            }
+        }
         //Notifications.notifyStartSession(morphline);
         if (!morphline.process(record)) {
             //Notifications.notifyRollbackTransaction(morphline);
