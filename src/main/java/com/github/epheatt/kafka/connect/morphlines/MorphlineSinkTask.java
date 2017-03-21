@@ -18,10 +18,20 @@ package com.github.epheatt.kafka.connect.morphlines;
 
 import org.apache.kafka.clients.consumer.OffsetAndMetadata;
 import org.apache.kafka.common.TopicPartition;
+import org.apache.kafka.connect.data.ConnectSchema;
+import org.apache.kafka.connect.data.Date;
+import org.apache.kafka.connect.data.Decimal;
+import org.apache.kafka.connect.data.Field;
+import org.apache.kafka.connect.data.Schema;
+import org.apache.kafka.connect.data.SchemaBuilder;
+import org.apache.kafka.connect.data.Struct;
+import org.apache.kafka.connect.data.Time;
+import org.apache.kafka.connect.data.Timestamp;
 import org.apache.kafka.connect.errors.RetriableException;
+import org.apache.kafka.connect.json.JsonConverter;
 import org.apache.kafka.connect.sink.SinkRecord;
 import org.apache.kafka.connect.sink.SinkTask;
-import org.apache.kafka.connect.data.*;
+import org.apache.kafka.connect.storage.Converter;
 
 import org.kitesdk.morphline.api.Command;
 import org.kitesdk.morphline.api.MorphlineCompilationException;
@@ -39,6 +49,7 @@ import com.typesafe.config.ConfigFactory;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.nio.charset.StandardCharsets;
 import java.io.BufferedWriter;
 import java.io.File;
 import java.io.FileWriter;
@@ -46,10 +57,17 @@ import java.io.IOException;
 import java.net.URL;
 import java.net.MalformedURLException;
 import java.util.Collection;
+import java.util.Collections;
 import java.util.Map;
 
 public class MorphlineSinkTask<T extends MorphlineSinkConnectorConfig> extends SinkTask {
   private static final Logger log = LoggerFactory.getLogger(MorphlineSinkTask.class);
+  
+  private static final Converter JSON_CONVERTER;
+  static {
+    JSON_CONVERTER = new JsonConverter();
+    JSON_CONVERTER.configure(Collections.singletonMap("schemas.enable", "false"), false);
+  }
   
   protected MorphlineSinkConnectorConfig config;
 
@@ -135,17 +153,24 @@ public class MorphlineSinkTask<T extends MorphlineSinkConnectorConfig> extends S
         record.put("kafkaTopic", sinkRecord.topic());
         record.put("kafkaPartition", sinkRecord.kafkaPartition());
         Object value = sinkRecord.value();
+        Schema schema = sinkRecord.valueSchema();
+        log.debug("SinkRecord value: " + value);
+        log.debug("SinkRecord schema: " + schema);
         record.put("kafkaKey", sinkRecord.key());
         record.put("kafkaKeySchema", sinkRecord.keySchema());
-        record.put("kafkaValueSchema", sinkRecord.valueSchema());
         record.put("kafkaValue", value);
-        if (value instanceof java.lang.String) {
-            try {
-                record.put(Fields.ATTACHMENT_BODY, ((String) value).getBytes("UTF-8"));
-                record.put(Fields.ATTACHMENT_CHARSET, "UTF-8");
-            } catch (java.io.UnsupportedEncodingException uee) {
-                ; //ignore for now
-            }
+        record.put("kafkaValueSchema", schema);
+        if (value instanceof String) {
+            //try {
+                record.put(Fields.ATTACHMENT_BODY, ((String) value).getBytes(StandardCharsets.UTF_8));
+                record.put(Fields.ATTACHMENT_CHARSET, StandardCharsets.UTF_8);
+            //} catch (java.io.UnsupportedEncodingException uee) {
+            //   ; // ignore for now 
+            //}
+        } else {
+            final String payload = new String(JSON_CONVERTER.fromConnectData(sinkRecord.topic(), schema, value), StandardCharsets.UTF_8);
+            record.put(Fields.ATTACHMENT_BODY, payload.getBytes(StandardCharsets.UTF_8));
+            record.put(Fields.ATTACHMENT_CHARSET, StandardCharsets.UTF_8);
         }
         //Notifications.notifyStartSession(morphline);
         if (!morphline.process(record)) {

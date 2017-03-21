@@ -109,7 +109,12 @@
             <version>${kafka.version}</version>
             <scope>provided</scope>
         </dependency>
-        
+        <dependency>
+            <groupId>org.apache.kafka</groupId>
+            <artifactId>connect-json</artifactId>
+            <version>${kafka.version}</version>
+            <scope>provided</scope>
+        </dependency>
         
         <dependency>
             <groupId>com.github.jcustenborder.kafka.connect</groupId>

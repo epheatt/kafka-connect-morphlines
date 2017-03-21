@@ -85,7 +85,7 @@ class Records {
         1,
         null,
         null,
-        null,
+        schema,
         testCase.struct,
         2L,
         1484897702123L,
