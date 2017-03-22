@@ -70,7 +70,13 @@ public class MorphlineSinkTask<T extends MorphlineSinkConnectorConfig> extends S
   }
   
   protected MorphlineSinkConnectorConfig config;
-
+  
+  private static final Object LOCK = new Object();
+  private static Compiler morphlineCompiler;
+  static {
+      morphlineCompiler = new Compiler();
+  }
+  
   private MorphlineContext morphlineContext;
   private Command morphline;
   private Command finalChild;
@@ -130,18 +136,16 @@ public class MorphlineSinkTask<T extends MorphlineSinkConnectorConfig> extends S
         throw new MorphlineCompilationException("Invalid content from parameter: " + MORPHLINE_FILE_PARAM, null);
     }
     log.debug("MorphlineFileConfig Content: " + morphlineFileConfig);
-    Config override = ConfigFactory.parseMap(settings);
+    Config override = ConfigFactory.parseMap(settings).getConfig("morphlines");
     log.debug("Overide Settings for Task: " + override);
-    try {
-        File morphlineFile = File.createTempFile("morphline", "."+morphlineId);
-        morphlineFile.deleteOnExit();
-        BufferedWriter out = new BufferedWriter(new FileWriter(morphlineFile));
-        out.write(morphlineFileConfig.root().render());
-        out.close();
-        morphline = new Compiler().compile(morphlineFile, morphlineId, morphlineContext, finalChild, override.getConfig("morphlines"));
-    } catch (java.io.IOException ioe) {
-        throw new MorphlineCompilationException("Unable to compile morphline pipeline from: " + MORPHLINE_FILE_PARAM, null);
+    Config config = override.withFallback(morphlineFileConfig);
+    synchronized (LOCK) {
+        ConfigFactory.invalidateCaches();
+        config = ConfigFactory.load(config);
+        config.checkValid(ConfigFactory.defaultReference()); // eagerly validate aspects of tree config
     }
+    Config morphlineConfig = morphlineCompiler.find(morphlineId, config, morphlineFilePath);
+    morphline = morphlineCompiler.compile(morphlineConfig, morphlineContext, finalChild);
   }
   
   @Override

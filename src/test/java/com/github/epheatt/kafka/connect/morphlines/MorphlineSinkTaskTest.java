@@ -55,13 +55,6 @@ public class MorphlineSinkTaskTest {
       Map<String, String> settings = invocationOnMock.getArgument(0);
       return new MorphlineSinkConnectorConfig(settings);
     });    
-    Map<String, String> settings = ImmutableMap.of(
-            "morphlines.morphlineFile","httpsolr.conf",
-            "morphlines.morphlineId","httpsolr",
-            "morphlines.collection","muffins",
-            "morphlines.solrUrl","http://localhost:9231"
-    );
-    this.task.start(settings);
     when(this.client.request(any(UpdateRequest.class), any())).thenAnswer(new Answer<Object>() {
         @Override
         public Object answer(InvocationOnMock invocationOnMock) throws Throwable {
@@ -77,7 +70,26 @@ public class MorphlineSinkTaskTest {
   }
 
   @Test
-  public void test() {
+  public void testLoadSolr() {
+    Map<String, String> settings = ImmutableMap.of(
+          "morphlines.morphlineFile","httpsolr.conf",
+          "morphlines.morphlineId","httpsolr",
+          "morphlines.solrUrl","http://localhost:9231",
+          "morphlines.collection","muffins"
+    );
+    this.task.start(settings);  
+    List<SinkRecord> records = Records.records();
+    this.task.put(records);
+  }
+  
+  @Test
+  public void testReadJson() {
+    Map<String, String> settings = ImmutableMap.of(
+          "morphlines.morphlineFile","readjson.conf",
+          "morphlines.morphlineId","readjson",
+          "morphlines.topic","readjson"
+    );
+    this.task.start(settings);  
     List<SinkRecord> records = Records.records();
     this.task.put(records);
   }
