@@ -139,7 +139,7 @@ public class MorphlineSinkTask<T extends MorphlineSinkConnectorConfig> extends S
     }
     log.debug("MorphlineFileConfig Content: " + morphlineFileConfig);
     Config override = ConfigFactory.parseMap(getByPrefix(settings,"morphlines")).getConfig("morphlines");
-    log.debug("Overide Settings for Task: " + override);
+    log.debug("Overide Settings for Morphlines Task: " + override);
     Config config = override.withFallback(morphlineFileConfig);
     synchronized (LOCK) {
         ConfigFactory.invalidateCaches();
@@ -172,16 +172,16 @@ public class MorphlineSinkTask<T extends MorphlineSinkConnectorConfig> extends S
         record.put("kafkaOffset", sinkRecord.kafkaOffset());
         record.put("kafkaTimestamp", sinkRecord.timestamp());
         record.put("kafkaTimestampType", sinkRecord.timestampType());
-        Object value = sinkRecord.value();
-        Schema schema = sinkRecord.valueSchema();
-        log.debug("SinkRecord value: " + value);
-        log.debug("SinkRecord schema: " + schema);
         record.put("kafkaKey", sinkRecord.key());
         record.put("kafkaKeySchema", sinkRecord.keySchema());
+        Object value = sinkRecord.value();
+        log.debug("Record Value: " + value);
+        Schema schema = sinkRecord.valueSchema();
+        log.debug("Record Schema: " + schema);
         record.put("kafkaValue", value);
         record.put("kafkaValueSchema", schema);
         if (schema != null && schema.type() == Schema.Type.STRING) {
-            record.put(Fields.ATTACHMENT_BODY, ((String) value).getBytes(StandardCharsets.UTF_8));
+            record.put(Fields.ATTACHMENT_BODY, ((String) sinkRecord.value()).getBytes(StandardCharsets.UTF_8));
         } else {
             final String payload = new String(JSON_CONVERTER.fromConnectData(sinkRecord.topic(), schema, value), StandardCharsets.UTF_8);
             record.put(Fields.ATTACHMENT_BODY, payload.getBytes(StandardCharsets.UTF_8));

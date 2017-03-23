@@ -30,9 +30,12 @@ class Records {
 
   public static class TestCase {
     SinkRecord record;
-
   }
 
+  public static class StringTestCase extends TestCase {
+      String string;
+  }
+  
   public static class StructTestCase extends TestCase {
     Struct struct;
   }
@@ -95,8 +98,31 @@ class Records {
     return testCase;
   }
 
+  static StringTestCase string() {
+      StringTestCase testCase = new StringTestCase();
+
+      Schema schema = SchemaBuilder.string()
+          .name("Testing")
+          .build();
+      testCase.string = "{\"firstName\":\"example\",\"lastName\":\"user\",\"email\":\"example.user@example.com\",\"age\":27}";
+      testCase.record = new SinkRecord(
+          "testing",
+          1,
+          null,
+          null,
+          schema,
+          testCase.string,
+          2L,
+          1484897702123L,
+          TimestampType.CREATE_TIME
+      );
+
+      return testCase;
+    }
+  
   static List<SinkRecord> records() {
     return Arrays.asList(
+        string().record,
         struct().record,
         map().record
     );

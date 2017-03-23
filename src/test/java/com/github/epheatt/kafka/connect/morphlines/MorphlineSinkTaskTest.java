@@ -31,6 +31,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 
@@ -86,12 +87,23 @@ public class MorphlineSinkTaskTest {
   public void testReadJson() {
     Map<String, String> settings = ImmutableMap.of(
           "morphlines.morphlineFile","readjson.conf",
-          "morphlines.morphlineId","readjson",
-          "morphlines.topic","readjson"
+          "morphlines.morphlineId","readjson"
     );
     this.task.start(settings);  
     List<SinkRecord> records = Records.records();
     this.task.put(records);
   }
 
+  @Test
+  public void testReadLine() {
+    Map<String, String> settings = ImmutableMap.of(
+          "morphlines.morphlineFile","readline.conf",
+          "morphlines.morphlineId","readline"
+    );
+    this.task.start(settings);  
+    List<SinkRecord> records = new ArrayList<SinkRecord>();
+    records.add(Records.string().record);
+    this.task.put(records);
+  }
+  
 }
