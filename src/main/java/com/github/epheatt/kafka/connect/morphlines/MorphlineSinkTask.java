@@ -58,7 +58,9 @@ import java.net.URL;
 import java.net.MalformedURLException;
 import java.util.Collection;
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.Map;
+import java.util.Map.Entry;
 
 public class MorphlineSinkTask<T extends MorphlineSinkConnectorConfig> extends SinkTask {
   private static final Logger log = LoggerFactory.getLogger(MorphlineSinkTask.class);
@@ -136,7 +138,7 @@ public class MorphlineSinkTask<T extends MorphlineSinkConnectorConfig> extends S
         throw new MorphlineCompilationException("Invalid content from parameter: " + MORPHLINE_FILE_PARAM, null);
     }
     log.debug("MorphlineFileConfig Content: " + morphlineFileConfig);
-    Config override = ConfigFactory.parseMap(settings).getConfig("morphlines");
+    Config override = ConfigFactory.parseMap(getByPrefix(settings,"morphlines")).getConfig("morphlines");
     log.debug("Overide Settings for Task: " + override);
     Config config = override.withFallback(morphlineFileConfig);
     synchronized (LOCK) {
@@ -148,6 +150,17 @@ public class MorphlineSinkTask<T extends MorphlineSinkConnectorConfig> extends S
     morphline = morphlineCompiler.compile(morphlineConfig, morphlineContext, finalChild);
   }
   
+  private static HashMap<String, String> getByPrefix(
+          Map<String, String> myMap,
+          String prefix ) {
+      HashMap<String, String> local = new HashMap<String, String>();
+      for (Map.Entry<String, String> entry : myMap.entrySet()) {
+          String key = entry.getKey();
+          if (key.startsWith(prefix)) local.put(key, entry.getValue());
+      }
+      return local;
+  }
+  
   @Override
   public void put(Collection<SinkRecord> collection) {
       // process each input data file
@@ -156,6 +169,9 @@ public class MorphlineSinkTask<T extends MorphlineSinkConnectorConfig> extends S
         Record record = new Record();
         record.put("kafkaTopic", sinkRecord.topic());
         record.put("kafkaPartition", sinkRecord.kafkaPartition());
+        record.put("kafkaOffset", sinkRecord.kafkaOffset());
+        record.put("kafkaTimestamp", sinkRecord.timestamp());
+        record.put("kafkaTimestampType", sinkRecord.timestampType());
         Object value = sinkRecord.value();
         Schema schema = sinkRecord.valueSchema();
         log.debug("SinkRecord value: " + value);

@@ -44,7 +44,7 @@ solr_cloud:
     - "ZOOKEEPER_PORT_2181_TCP_ADDR=zookeeper"
     - "ZOOKEEPER_PORT_2181_TCP_PORT=2181"
 schema-registry:
-  image: confluentinc/cp-schema-registry
+  image: confluentinc/cp-schema-registry:3.2.0
   hostname: schema-registry
 #  entrypoint: "bash -c 'sleep 10;/usr/local/bin/schema-registry-docker.sh'"
   ports:
@@ -81,8 +81,8 @@ kafka-connect:
     - "CONNECT_INTERNAL_VALUE_CONVERTER=org.apache.kafka.connect.json.JsonConverter"
     - "CONNECT_INTERNAL_KEY_CONVERTER_SCHEMAS_ENABLE=false"
     - "CONNECT_INTERNAL_VALUE_CONVERTER_SCHEMAS_ENABLE=false"
-    - "CONNECT_GROUP_ID=default"
-    - "CONNECT_CONFIG_STORAGE_TOPIC=default.config"
-    - "CONNECT_OFFSET_STORAGE_TOPIC=default.offsets"
-    - "CONNECT_STATUS_STORAGE_TOPIC=default.status"
+    - "CONNECT_GROUP_ID=connect-cluster"
+    - "CONNECT_CONFIG_STORAGE_TOPIC=connect-config"
+    - "CONNECT_OFFSET_STORAGE_TOPIC=connect-offsets"
+    - "CONNECT_STATUS_STORAGE_TOPIC=connect-status"
     - "CONNECT_LOG4J_ROOT_LOGLEVEL=INFO"
