@@ -19,8 +19,6 @@ docker exec -it kafkaconnectmorphlines_solr_1 bin/solr create -c twitter
 curl -X POST -H 'Content-type:application/json' --data-binary '{
   "delete-dynamic-field":{ "name":"*_phon_en" },
   "delete-field-type":{ "name":"phonetic_en" },
-  "delete-dynamic-field":{ "name":"*_txt_ja" },
-  "delete-field-type":{ "name":"text_ja" },
   "delete-dynamic-field":{ "name":"*_txt_ar" },
   "delete-field-type":{ "name":"text_ar" },
   "delete-dynamic-field":{ "name":"*_txt_bg" },
