@@ -190,7 +190,7 @@ public class MorphlineSinkTask<T extends MorphlineSinkConnectorConfig> extends S
         //Notifications.notifyStartSession(morphline);
         if (!morphline.process(record)) {
             log.warn("Record process failed sinkRecord: " + sinkRecord + " record:" + record);
-            Notifications.notifyRollbackTransaction(morphline);
+            //Notifications.notifyRollbackTransaction(morphline);
         }
       }
       Notifications.notifyCommitTransaction(morphline);
@@ -198,7 +198,7 @@ public class MorphlineSinkTask<T extends MorphlineSinkConnectorConfig> extends S
 
   @Override
   public void stop() {
-      Notifications.notifyShutdown(morphline);
+      if (morphline != null) Notifications.notifyShutdown(morphline);
   }
 
   @Override
