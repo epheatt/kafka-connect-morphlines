@@ -77,14 +77,23 @@
         <dependency>
             <groupId>org.apache.solr</groupId>
             <artifactId>solr-solrj</artifactId>
-            <version>6.3.0</version>
-            <scope>test</scope>
+            <version>6.4.1</version>
+            
         </dependency>
         <dependency>
             <groupId>org.apache.solr</groupId>
             <artifactId>solr-morphlines-core</artifactId>
-            <version>6.3.0</version>
-            <scope>test</scope>
+            <version>6.4.1</version>
+            <exclusions>
+	            <exclusion>
+	                <groupId>io.dropwizard.metrics</groupId>
+	                <artifactId>*</artifactId>
+	            </exclusion>
+	            <exclusion>
+	                <groupId>org.eclipse.jetty</groupId>
+	                <artifactId>*</artifactId>
+	            </exclusion>
+	        </exclusions>
         </dependency>
         
         <dependency>
@@ -92,7 +101,6 @@
             <artifactId>connect-utils</artifactId>
             <version>[0.1.14,0.1.100)</version>
         </dependency>
-        
         <dependency>
             <groupId>com.google.guava</groupId>
             <artifactId>guava</artifactId>
@@ -102,6 +110,7 @@
             <groupId>com.github.jcustenborder.kafka.connect</groupId>
             <artifactId>connect-utils</artifactId>
             <version>[0.2.33,0.2.1000)</version>
+            <scope>test</scope>
         </dependency>
         <dependency>
             <groupId>org.apache.kafka</groupId>
@@ -174,10 +183,40 @@
 	                    <configuration>
 	                        <shadedArtifactAttached>false</shadedArtifactAttached>
 	                        <createDependencyReducedPom>true</createDependencyReducedPom>
+	                        <filters>
+					            <filter>
+					              <artifact>*:*</artifact>
+					              <excludes>
+					                <exclude>META-INF/*.SF</exclude>
+					                <exclude>META-INF/*.DSA</exclude>
+					                <exclude>META-INF/*.RSA</exclude>
+					              </excludes>
+					            </filter>
+					          </filters>
 	                        <relocations>
 	                            <relocation>
 	                                <pattern>com.fasterxml.jackson</pattern>
 	                                <shadedPattern>com.github.epheatt.kafka.connect.morphlines.com.fasterxml.jackson</shadedPattern>
+	                            </relocation>
+	                            <relocation>
+	                                <pattern>org.apache.hadoop</pattern>
+	                                <shadedPattern>com.github.epheatt.kafka.connect.morphlines.org.apache.hadoop</shadedPattern>
+	                            </relocation>
+	                            <relocation>
+	                                <pattern>org.apache.zookeeper</pattern>
+	                                <shadedPattern>com.github.epheatt.kafka.connect.morphlines.org.apache.zookeeper</shadedPattern>
+	                            </relocation>
+	                            <relocation>
+	                                <pattern>org.apache.curator</pattern>
+	                                <shadedPattern>com.github.epheatt.kafka.connect.morphlines.org.apache.curator</shadedPattern>
+	                            </relocation>
+	                            <relocation>
+	                                <pattern>org.apache.commons</pattern>
+	                                <shadedPattern>com.github.epheatt.kafka.connect.morphlines.org.apache.commons</shadedPattern>
+	                            </relocation>
+	                            <relocation>
+	                                <pattern>org.apache.httpcomponents</pattern>
+	                                <shadedPattern>com.github.epheatt.kafka.connect.morphlines.org.apache.httpcomponents</shadedPattern>
 	                            </relocation>
 	                        </relocations>
 	                       	<transformers>

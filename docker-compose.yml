@@ -32,7 +32,7 @@ kafka:
     - "KAFKA_ZOOKEEPER_CONNECT=zookeeper:2181"
     - "KAFKA_ADVERTISED_LISTENERS=PLAINTEXT://kafka:9092"
     - "KAFKA_ADVERTISED_HOST_NAME=kafka"
-solr_cloud:
+solr:
   image: solr
   hostname: solr
   command: "bash -c '/opt/solr/bin/solr start -f -z zookeeper:2181 -h solr'"
@@ -64,6 +64,8 @@ kafka-connect:
   links:
     - "kafka:kafka"
     - "schema-registry:schema-registry"
+    - "zookeeper:zookeeper"
+    - "solr:solr"
   volumes:
     - "./target/:/etc/kafka-connect/jars"
   environment:

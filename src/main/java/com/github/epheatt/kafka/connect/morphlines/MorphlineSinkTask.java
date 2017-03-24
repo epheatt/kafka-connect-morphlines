@@ -164,7 +164,7 @@ public class MorphlineSinkTask<T extends MorphlineSinkConnectorConfig> extends S
   @Override
   public void put(Collection<SinkRecord> collection) {
       // process each input data file
-      //Notifications.notifyBeginTransaction(morphline);
+      Notifications.notifyBeginTransaction(morphline);
       for (SinkRecord sinkRecord : collection) {
         Record record = new Record();
         record.put("kafkaTopic", sinkRecord.topic());
@@ -189,15 +189,16 @@ public class MorphlineSinkTask<T extends MorphlineSinkConnectorConfig> extends S
         record.put(Fields.ATTACHMENT_CHARSET, StandardCharsets.UTF_8);
         //Notifications.notifyStartSession(morphline);
         if (!morphline.process(record)) {
-            //Notifications.notifyRollbackTransaction(morphline);
+            log.warn("Record process failed sinkRecord: " + sinkRecord + " record:" + record);
+            Notifications.notifyRollbackTransaction(morphline);
         }
       }
-      //Notifications.notifyCommitTransaction(morphline);
+      Notifications.notifyCommitTransaction(morphline);
   }
 
   @Override
   public void stop() {
-      //Notifications.notifyShutdown(morphline);
+      Notifications.notifyShutdown(morphline);
   }
 
   @Override
