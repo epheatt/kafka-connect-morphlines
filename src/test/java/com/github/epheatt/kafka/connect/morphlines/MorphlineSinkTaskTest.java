@@ -72,8 +72,12 @@ public class MorphlineSinkTaskTest {
 
     @Test
     public void testLoadSolr() {
-        Map<String, String> settings = ImmutableMap.of("morphlines.morphlineFile", "httpsolr.conf", "morphlines.morphlineId", "httpsolr",
-                "morphlines.solrUrl", "http://localhost:9231", "morphlines.collection", "muffins");
+        Map<String, String> settings = ImmutableMap.of(
+                "morphlines.morphlineFile", "resource:httpsolr.conf", 
+                "morphlines.morphlineId", "httpsolr",
+                "morphlines.solrUrl", "http://localhost:9231", 
+                "morphlines.collection", "muffins"
+            );
         this.task.start(settings);
         List<SinkRecord> records = Records.records();
         this.task.put(records);
@@ -81,7 +85,10 @@ public class MorphlineSinkTaskTest {
 
     @Test
     public void testReadJson() {
-        Map<String, String> settings = ImmutableMap.of("morphlines.morphlineFile", "readjson.conf", "morphlines.morphlineId", "readjson");
+        Map<String, String> settings = ImmutableMap.of(
+                "morphlines.morphlineFile", "resource:readjson.conf", 
+                "morphlines.morphlineId", "readjson"
+            );
         this.task.start(settings);
         List<SinkRecord> records = Records.records();
         this.task.put(records);
@@ -89,7 +96,10 @@ public class MorphlineSinkTaskTest {
 
     @Test
     public void testReadLine() {
-        Map<String, String> settings = ImmutableMap.of("morphlines.morphlineFile", "readline.conf", "morphlines.morphlineId", "readline");
+        Map<String, String> settings = ImmutableMap.of(
+                "morphlines.morphlineFile", "resource:readline.conf", 
+                "morphlines.morphlineId", "readline"
+            );
         this.task.start(settings);
         List<SinkRecord> records = new ArrayList<SinkRecord>();
         records.add(Records.string().record);

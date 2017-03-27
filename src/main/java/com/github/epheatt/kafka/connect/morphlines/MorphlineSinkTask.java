@@ -128,10 +128,10 @@ public class MorphlineSinkTask<T extends MorphlineSinkConnectorConfig> extends S
             }
         } else if (morphlineFilePath.startsWith("resource:")) {
             morphlineFileConfig = ConfigFactory.parseResources(getClass(), morphlineFilePath.substring(morphlineFilePath.indexOf(":") + 1));
-        } else if (morphlineFilePath.startsWith("include ")) {
+        } else if (morphlineFilePath.startsWith("include ")) {//TODO: broken for now need tests
             morphlineFileConfig = ConfigFactory.parseString(morphlineFilePath);
         } else {
-            morphlineFileConfig = ConfigFactory.parseResources(getClass(), morphlineFilePath);
+            morphlineFileConfig = ConfigFactory.parseFile(new File(morphlineFilePath));
         }
         if (morphlineFileConfig.isEmpty()) {
             throw new MorphlineCompilationException("Invalid content from parameter: " + MORPHLINE_FILE_PARAM, null);
