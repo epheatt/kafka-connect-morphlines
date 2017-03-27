@@ -43,67 +43,57 @@ import static org.mockito.Mockito.when;
 import static org.mockito.Mockito.withSettings;
 
 public class MorphlineSinkTaskTest {
-  private static final Logger log = LoggerFactory.getLogger(MorphlineSinkTaskTest.class);
-  MorphlineSinkTask task;
-  SolrClient client;
+    private static final Logger log = LoggerFactory.getLogger(MorphlineSinkTaskTest.class);
+    MorphlineSinkTask task;
+    SolrClient client;
 
-  @BeforeEach
-  public void before() throws IOException, SolrServerException {
-    this.task = mock(MorphlineSinkTask.class, Mockito.CALLS_REAL_METHODS);
-    this.client = mock(SolrClient.class);
-    //when(this.task.client()).thenReturn(this.client);
-    when(this.task.config(anyMap())).thenAnswer(invocationOnMock -> {
-      Map<String, String> settings = invocationOnMock.getArgument(0);
-      return new MorphlineSinkConnectorConfig(settings);
-    });    
-    when(this.client.request(any(UpdateRequest.class), any())).thenAnswer(new Answer<Object>() {
-        @Override
-        public Object answer(InvocationOnMock invocationOnMock) throws Throwable {
-          log.trace("request");
-          NamedList<Object> result = new NamedList<>();
-          NamedList<Object> responseHeaders = new NamedList<>();
-          responseHeaders.add("status", 200);
-          responseHeaders.add("QTime", 123);
-          result.add("responseHeader", responseHeaders);
-          return result;
-        }
-      });
-  }
+    @BeforeEach
+    public void before() throws IOException, SolrServerException {
+        this.task = mock(MorphlineSinkTask.class, Mockito.CALLS_REAL_METHODS);
+        this.client = mock(SolrClient.class);
+        // when(this.task.client()).thenReturn(this.client);
+        when(this.task.config(anyMap())).thenAnswer(invocationOnMock -> {
+            Map<String, String> settings = invocationOnMock.getArgument(0);
+            return new MorphlineSinkConnectorConfig(settings);
+        });
+        when(this.client.request(any(UpdateRequest.class), any())).thenAnswer(new Answer<Object>() {
+            @Override
+            public Object answer(InvocationOnMock invocationOnMock) throws Throwable {
+                log.trace("request");
+                NamedList<Object> result = new NamedList<>();
+                NamedList<Object> responseHeaders = new NamedList<>();
+                responseHeaders.add("status", 200);
+                responseHeaders.add("QTime", 123);
+                result.add("responseHeader", responseHeaders);
+                return result;
+            }
+        });
+    }
 
-  @Test
-  public void testLoadSolr() {
-    Map<String, String> settings = ImmutableMap.of(
-          "morphlines.morphlineFile","httpsolr.conf",
-          "morphlines.morphlineId","httpsolr",
-          "morphlines.solrUrl","http://localhost:9231",
-          "morphlines.collection","muffins"
-    );
-    this.task.start(settings);  
-    List<SinkRecord> records = Records.records();
-    this.task.put(records);
-  }
-  
-  @Test
-  public void testReadJson() {
-    Map<String, String> settings = ImmutableMap.of(
-          "morphlines.morphlineFile","readjson.conf",
-          "morphlines.morphlineId","readjson"
-    );
-    this.task.start(settings);  
-    List<SinkRecord> records = Records.records();
-    this.task.put(records);
-  }
+    @Test
+    public void testLoadSolr() {
+        Map<String, String> settings = ImmutableMap.of("morphlines.morphlineFile", "httpsolr.conf", "morphlines.morphlineId", "httpsolr",
+                "morphlines.solrUrl", "http://localhost:9231", "morphlines.collection", "muffins");
+        this.task.start(settings);
+        List<SinkRecord> records = Records.records();
+        this.task.put(records);
+    }
 
-  @Test
-  public void testReadLine() {
-    Map<String, String> settings = ImmutableMap.of(
-          "morphlines.morphlineFile","readline.conf",
-          "morphlines.morphlineId","readline"
-    );
-    this.task.start(settings);  
-    List<SinkRecord> records = new ArrayList<SinkRecord>();
-    records.add(Records.string().record);
-    this.task.put(records);
-  }
-  
+    @Test
+    public void testReadJson() {
+        Map<String, String> settings = ImmutableMap.of("morphlines.morphlineFile", "readjson.conf", "morphlines.morphlineId", "readjson");
+        this.task.start(settings);
+        List<SinkRecord> records = Records.records();
+        this.task.put(records);
+    }
+
+    @Test
+    public void testReadLine() {
+        Map<String, String> settings = ImmutableMap.of("morphlines.morphlineFile", "readline.conf", "morphlines.morphlineId", "readline");
+        this.task.start(settings);
+        List<SinkRecord> records = new ArrayList<SinkRecord>();
+        records.add(Records.string().record);
+        this.task.put(records);
+    }
+
 }

@@ -17,11 +17,11 @@ package com.github.epheatt.kafka.connect.morphlines;
 
 class VersionUtil {
 
-  private VersionUtil() {
-  }
+    private VersionUtil() {
+    }
 
-  public static String getVersion() {
-    return "0.0.0.0";
-  }
+    public static String getVersion() {
+        return "0.0.0.0";
+    }
 
 }

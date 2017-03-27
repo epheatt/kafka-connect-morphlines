@@ -15,7 +15,6 @@
  */
 package com.github.epheatt.kafka.connect.morphlines;
 
-
 import org.apache.kafka.clients.consumer.OffsetAndMetadata;
 import org.apache.kafka.common.TopicPartition;
 import org.apache.kafka.connect.data.ConnectSchema;
@@ -63,147 +62,147 @@ import java.util.Map;
 import java.util.Map.Entry;
 
 public class MorphlineSinkTask<T extends MorphlineSinkConnectorConfig> extends SinkTask {
-  private static final Logger log = LoggerFactory.getLogger(MorphlineSinkTask.class);
-  
-  private static final Converter JSON_CONVERTER;
-  static {
-    JSON_CONVERTER = new JsonConverter();
-    JSON_CONVERTER.configure(Collections.singletonMap("schemas.enable", "false"), false);
-  }
-  
-  protected MorphlineSinkConnectorConfig config;
-  
-  private static final Object LOCK = new Object();
-  private static Compiler morphlineCompiler;
-  static {
-      morphlineCompiler = new Compiler();
-  }
-  
-  private MorphlineContext morphlineContext;
-  private Command morphline;
-  private Command finalChild;
-  private String morphlineFileAndId;
+    private static final Logger log = LoggerFactory.getLogger(MorphlineSinkTask.class);
 
-  public static final String MORPHLINE_FILE_PARAM = "morphlineFile";
-  public static final String MORPHLINE_ID_PARAM = "morphlineId";
-  
-  protected MorphlineSinkConnectorConfig config(Map<String, String> settings) {
-      return new MorphlineSinkConnectorConfig(settings);
-  }
-  
-//For test injection
- void setMorphlineContext(MorphlineContext morphlineContext) {
-   this.morphlineContext = morphlineContext;
- }
+    private static final Converter JSON_CONVERTER;
+    static {
+        JSON_CONVERTER = new JsonConverter();
+        JSON_CONVERTER.configure(Collections.singletonMap("schemas.enable", "false"), false);
+    }
 
- // for interceptor
- void setFinalChild(Command finalChild) {
-   this.finalChild = finalChild;
- }
- 
-  @Override
-  public void start(Map<String, String> settings) {
-    log.debug("Starting");
-    this.config = config(settings);
-    String morphlineFilePath = this.config.morphlineFile;
-    String morphlineId = this.config.morphlineId;
-    
-    if (morphlineFilePath == null || morphlineFilePath.trim().length() == 0) {
-      throw new MorphlineCompilationException("Missing parameter: " + MORPHLINE_FILE_PARAM, null);
+    protected MorphlineSinkConnectorConfig config;
+
+    private static final Object LOCK = new Object();
+    private static Compiler morphlineCompiler;
+    static {
+        morphlineCompiler = new Compiler();
     }
-    morphlineFileAndId = morphlineFilePath + "@" + morphlineId;
-    log.debug("Running: " + morphlineFileAndId);
-    
-    if (morphlineContext == null) {
-      morphlineContext = new MorphlineContext.Builder().build();
+
+    private MorphlineContext morphlineContext;
+    private Command morphline;
+    private Command finalChild;
+    private String morphlineFileAndId;
+
+    public static final String MORPHLINE_FILE_PARAM = "morphlineFile";
+    public static final String MORPHLINE_ID_PARAM = "morphlineId";
+
+    protected MorphlineSinkConnectorConfig config(Map<String, String> settings) {
+        return new MorphlineSinkConnectorConfig(settings);
     }
-    Config morphlineFileConfig = ConfigFactory.empty();
-    
-    if (morphlineFilePath.startsWith("file:")) {
-        morphlineFileConfig = ConfigFactory.parseFile(new File(morphlineFilePath.substring(morphlineFilePath.indexOf(":")+1)));
-    } else if (morphlineFilePath.startsWith("url:")) {
-        try {
-            morphlineFileConfig = ConfigFactory.parseURL(new URL(morphlineFilePath.substring(morphlineFilePath.indexOf(":")+1)));
-        } catch (java.net.MalformedURLException mue) {
-            
+
+    // For test injection
+    void setMorphlineContext(MorphlineContext morphlineContext) {
+        this.morphlineContext = morphlineContext;
+    }
+
+    // for interceptor
+    void setFinalChild(Command finalChild) {
+        this.finalChild = finalChild;
+    }
+
+    @Override
+    public void start(Map<String, String> settings) {
+        log.debug("Starting");
+        this.config = config(settings);
+        String morphlineFilePath = this.config.morphlineFile;
+        String morphlineId = this.config.morphlineId;
+
+        if (morphlineFilePath == null || morphlineFilePath.trim().length() == 0) {
+            throw new MorphlineCompilationException("Missing parameter: " + MORPHLINE_FILE_PARAM, null);
         }
-    } else if (morphlineFilePath.startsWith("resource:")) {
-        morphlineFileConfig = ConfigFactory.parseResources(getClass(),morphlineFilePath.substring(morphlineFilePath.indexOf(":")+1));
-    } else if (morphlineFilePath.startsWith("include ")) {
-        morphlineFileConfig = ConfigFactory.parseString(morphlineFilePath);
-    } else {
-        morphlineFileConfig = ConfigFactory.parseResources(getClass(),morphlineFilePath);
-    }
-    if (morphlineFileConfig.isEmpty()) {
-        throw new MorphlineCompilationException("Invalid content from parameter: " + MORPHLINE_FILE_PARAM, null);
-    }
-    log.debug("MorphlineFileConfig Content: " + morphlineFileConfig);
-    Config override = ConfigFactory.parseMap(getByPrefix(settings,"morphlines")).getConfig("morphlines");
-    log.debug("Overide Settings for Morphlines Task: " + override);
-    Config config = override.withFallback(morphlineFileConfig);
-    synchronized (LOCK) {
-        ConfigFactory.invalidateCaches();
-        config = ConfigFactory.load(config);
-        config.checkValid(ConfigFactory.defaultReference()); // eagerly validate aspects of tree config
-    }
-    Config morphlineConfig = morphlineCompiler.find(morphlineId, config, morphlineFilePath);
-    morphline = morphlineCompiler.compile(morphlineConfig, morphlineContext, finalChild);
-  }
-  
-  private static HashMap<String, String> getByPrefix(
-          Map<String, String> myMap,
-          String prefix ) {
-      HashMap<String, String> local = new HashMap<String, String>();
-      for (Map.Entry<String, String> entry : myMap.entrySet()) {
-          String key = entry.getKey();
-          if (key.startsWith(prefix)) local.put(key, entry.getValue());
-      }
-      return local;
-  }
-  
-  @Override
-  public void put(Collection<SinkRecord> collection) {
-      // process each input data file
-      Notifications.notifyBeginTransaction(morphline);
-      for (SinkRecord sinkRecord : collection) {
-        Record record = new Record();
-        record.put("kafkaTopic", sinkRecord.topic());
-        record.put("kafkaPartition", sinkRecord.kafkaPartition());
-        record.put("kafkaOffset", sinkRecord.kafkaOffset());
-        record.put("kafkaTimestamp", sinkRecord.timestamp());
-        record.put("kafkaTimestampType", sinkRecord.timestampType());
-        record.put("kafkaKey", sinkRecord.key());
-        record.put("kafkaKeySchema", sinkRecord.keySchema());
-        Object value = sinkRecord.value();
-        log.debug("Record Value: " + value);
-        Schema schema = sinkRecord.valueSchema();
-        log.debug("Record Schema: " + schema);
-        record.put("kafkaValue", value);
-        record.put("kafkaValueSchema", schema);
-        if (schema != null && schema.type() == Schema.Type.STRING) {
-            record.put(Fields.ATTACHMENT_BODY, ((String) sinkRecord.value()).getBytes(StandardCharsets.UTF_8));
+        morphlineFileAndId = morphlineFilePath + "@" + morphlineId;
+        log.debug("Running: " + morphlineFileAndId);
+
+        if (morphlineContext == null) {
+            morphlineContext = new MorphlineContext.Builder().build();
+        }
+        Config morphlineFileConfig = ConfigFactory.empty();
+
+        if (morphlineFilePath.startsWith("file:")) {
+            morphlineFileConfig = ConfigFactory.parseFile(new File(morphlineFilePath.substring(morphlineFilePath.indexOf(":") + 1)));
+        } else if (morphlineFilePath.startsWith("url:")) {
+            try {
+                morphlineFileConfig = ConfigFactory.parseURL(new URL(morphlineFilePath.substring(morphlineFilePath.indexOf(":") + 1)));
+            } catch (java.net.MalformedURLException mue) {
+
+            }
+        } else if (morphlineFilePath.startsWith("resource:")) {
+            morphlineFileConfig = ConfigFactory.parseResources(getClass(), morphlineFilePath.substring(morphlineFilePath.indexOf(":") + 1));
+        } else if (morphlineFilePath.startsWith("include ")) {
+            morphlineFileConfig = ConfigFactory.parseString(morphlineFilePath);
         } else {
-            final String payload = new String(JSON_CONVERTER.fromConnectData(sinkRecord.topic(), schema, value), StandardCharsets.UTF_8);
-            record.put(Fields.ATTACHMENT_BODY, payload.getBytes(StandardCharsets.UTF_8));
+            morphlineFileConfig = ConfigFactory.parseResources(getClass(), morphlineFilePath);
         }
-        record.put(Fields.ATTACHMENT_CHARSET, StandardCharsets.UTF_8);
-        //Notifications.notifyStartSession(morphline);
-        if (!morphline.process(record)) {
-            log.warn("Record process failed sinkRecord: " + sinkRecord + " record:" + record);
-            //Notifications.notifyRollbackTransaction(morphline);
+        if (morphlineFileConfig.isEmpty()) {
+            throw new MorphlineCompilationException("Invalid content from parameter: " + MORPHLINE_FILE_PARAM, null);
         }
-      }
-      Notifications.notifyCommitTransaction(morphline);
-  }
+        log.debug("MorphlineFileConfig Content: " + morphlineFileConfig);
+        Config override = ConfigFactory.parseMap(getByPrefix(settings, "morphlines")).getConfig("morphlines");
+        log.debug("Overide Settings for Morphlines Task: " + override);
+        Config config = override.withFallback(morphlineFileConfig);
+        synchronized (LOCK) {
+            ConfigFactory.invalidateCaches();
+            config = ConfigFactory.load(config);
+            config.checkValid(ConfigFactory.defaultReference()); // eagerly validate aspects of tree config
+        }
+        Config morphlineConfig = morphlineCompiler.find(morphlineId, config, morphlineFilePath);
+        morphline = morphlineCompiler.compile(morphlineConfig, morphlineContext, finalChild);
+    }
 
-  @Override
-  public void stop() {
-      if (morphline != null) Notifications.notifyShutdown(morphline);
-  }
+    private static HashMap<String, String> getByPrefix(Map<String, String> myMap, String prefix) {
+        HashMap<String, String> local = new HashMap<String, String>();
+        for (Map.Entry<String, String> entry : myMap.entrySet()) {
+            String key = entry.getKey();
+            if (key.startsWith(prefix))
+                local.put(key, entry.getValue());
+        }
+        return local;
+    }
 
-  @Override
-  public String version() {
-    return VersionUtil.getVersion();
-  }
+    @Override
+    public void put(Collection<SinkRecord> collection) {
+        // process each input data file
+        Notifications.notifyBeginTransaction(morphline);
+        for (SinkRecord sinkRecord : collection) {
+            Record record = new Record();
+            record.put("kafkaTopic", sinkRecord.topic());
+            record.put("kafkaPartition", sinkRecord.kafkaPartition());
+            record.put("kafkaOffset", sinkRecord.kafkaOffset());
+            record.put("kafkaTimestamp", sinkRecord.timestamp());
+            record.put("kafkaTimestampType", sinkRecord.timestampType());
+            record.put("kafkaKey", sinkRecord.key());
+            record.put("kafkaKeySchema", sinkRecord.keySchema());
+            Object value = sinkRecord.value();
+            log.debug("Record Value: " + value);
+            Schema schema = sinkRecord.valueSchema();
+            log.debug("Record Schema: " + schema);
+            record.put("kafkaValue", value);
+            record.put("kafkaValueSchema", schema);
+            if (schema != null && schema.type() == Schema.Type.STRING) {
+                record.put(Fields.ATTACHMENT_BODY, ((String) sinkRecord.value()).getBytes(StandardCharsets.UTF_8));
+            } else {
+                final String payload = new String(JSON_CONVERTER.fromConnectData(sinkRecord.topic(), schema, value), StandardCharsets.UTF_8);
+                record.put(Fields.ATTACHMENT_BODY, payload.getBytes(StandardCharsets.UTF_8));
+            }
+            record.put(Fields.ATTACHMENT_CHARSET, StandardCharsets.UTF_8);
+            // Notifications.notifyStartSession(morphline);
+            if (!morphline.process(record)) {
+                log.warn("Record process failed sinkRecord: " + sinkRecord + " record:" + record);
+                // Notifications.notifyRollbackTransaction(morphline);
+            }
+        }
+        Notifications.notifyCommitTransaction(morphline);
+    }
+
+    @Override
+    public void stop() {
+        if (morphline != null)
+            Notifications.notifyShutdown(morphline);
+    }
+
+    @Override
+    public String version() {
+        return VersionUtil.getVersion();
+    }
 
 }

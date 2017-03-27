@@ -23,23 +23,22 @@ import org.apache.kafka.common.config.ConfigDef;
 import java.util.Map;
 
 public class MorphlineSinkConnectorConfig extends AbstractConfig {
-  public static final String MORPHLINE_FILE_CONFIG = "morphlines.morphlineFile";
-  public static final String MORPHLINE_ID_CONFIG = "morphlines.morphlineId";
-  private static final String MORPHLINE_FILE_DOC = "Configures Morphline File with the command pipeline.";
-  private static final String MORPHLINE_ID_DOC = "Configures specific Morphline to run from within Morphline File.";
+    public static final String MORPHLINE_FILE_CONFIG = "morphlines.morphlineFile";
+    public static final String MORPHLINE_ID_CONFIG = "morphlines.morphlineId";
+    private static final String MORPHLINE_FILE_DOC = "Configures Morphline File with the command pipeline.";
+    private static final String MORPHLINE_ID_DOC = "Configures specific Morphline to run from within Morphline File.";
 
-  public final String morphlineFile;
-  public final String morphlineId;
-  
-  protected MorphlineSinkConnectorConfig(Map<String, String> props) {
-    super(config(), props);
-    this.morphlineFile = this.getString(MORPHLINE_FILE_CONFIG);
-    this.morphlineId = this.getString(MORPHLINE_ID_CONFIG);
-  }
+    public final String morphlineFile;
+    public final String morphlineId;
 
-  public static ConfigDef config() {
-    return new ConfigDef()
-        .define(MORPHLINE_FILE_CONFIG, ConfigDef.Type.STRING, "", ConfigDef.Importance.HIGH, MORPHLINE_FILE_DOC)
-        .define(MORPHLINE_ID_CONFIG, ConfigDef.Type.STRING, "", ConfigDef.Importance.HIGH, MORPHLINE_ID_DOC);
-  }
+    protected MorphlineSinkConnectorConfig(Map<String, String> props) {
+        super(config(), props);
+        this.morphlineFile = this.getString(MORPHLINE_FILE_CONFIG);
+        this.morphlineId = this.getString(MORPHLINE_ID_CONFIG);
+    }
+
+    public static ConfigDef config() {
+        return new ConfigDef().define(MORPHLINE_FILE_CONFIG, ConfigDef.Type.STRING, "", ConfigDef.Importance.HIGH, MORPHLINE_FILE_DOC).define(
+                MORPHLINE_ID_CONFIG, ConfigDef.Type.STRING, "", ConfigDef.Importance.HIGH, MORPHLINE_ID_DOC);
+    }
 }

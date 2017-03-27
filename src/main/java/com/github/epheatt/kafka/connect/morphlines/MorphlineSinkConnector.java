@@ -15,7 +15,6 @@
  */
 package com.github.epheatt.kafka.connect.morphlines;
 
-
 import org.apache.kafka.common.config.ConfigDef;
 import org.apache.kafka.connect.connector.Task;
 import org.apache.kafka.connect.sink.SinkConnector;
@@ -24,44 +23,43 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 
-
 public class MorphlineSinkConnector extends SinkConnector {
 
-  Map<String, String> config;
+    Map<String, String> config;
 
-  @Override
-  public String version() {
-    return VersionUtil.getVersion();
-  }
-
-  @Override
-  public Class<? extends Task> taskClass() {
-    return MorphlineSinkTask.class;
-  }
-
-  @Override
-  public ConfigDef config() {
-    return MorphlineSinkConnectorConfig.config();
-  }
-  
-  @Override
-  public void start(Map<String, String> map) {
-    this.config = map;
-  }
-
-  @Override
-  public List<Map<String, String>> taskConfigs(int count) {
-    List<Map<String, String>> results = new ArrayList<>();
-
-    for (int i = 0; i < count; i++) {
-      results.add(config);
+    @Override
+    public String version() {
+        return VersionUtil.getVersion();
     }
 
-    return results;
-  }
+    @Override
+    public Class<? extends Task> taskClass() {
+        return MorphlineSinkTask.class;
+    }
 
-  @Override
-  public void stop() {
+    @Override
+    public ConfigDef config() {
+        return MorphlineSinkConnectorConfig.config();
+    }
 
-  }
+    @Override
+    public void start(Map<String, String> map) {
+        this.config = map;
+    }
+
+    @Override
+    public List<Map<String, String>> taskConfigs(int count) {
+        List<Map<String, String>> results = new ArrayList<>();
+
+        for (int i = 0; i < count; i++) {
+            results.add(config);
+        }
+
+        return results;
+    }
+
+    @Override
+    public void stop() {
+
+    }
 }
