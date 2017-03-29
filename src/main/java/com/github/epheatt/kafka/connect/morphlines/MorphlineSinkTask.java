@@ -15,6 +15,7 @@
  */
 package com.github.epheatt.kafka.connect.morphlines;
 
+
 import org.apache.kafka.clients.consumer.OffsetAndMetadata;
 import org.apache.kafka.common.TopicPartition;
 import org.apache.kafka.connect.data.ConnectSchema;
@@ -31,7 +32,6 @@ import org.apache.kafka.connect.json.JsonConverter;
 import org.apache.kafka.connect.sink.SinkRecord;
 import org.apache.kafka.connect.sink.SinkTask;
 import org.apache.kafka.connect.storage.Converter;
-
 import org.kitesdk.morphline.api.Command;
 import org.kitesdk.morphline.api.MorphlineCompilationException;
 import org.kitesdk.morphline.api.MorphlineContext;
@@ -57,6 +57,8 @@ import java.net.URL;
 import java.net.MalformedURLException;
 import java.util.Collection;
 import java.util.Collections;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Map.Entry;
@@ -64,27 +66,11 @@ import java.util.Map.Entry;
 public class MorphlineSinkTask<T extends MorphlineSinkConnectorConfig> extends SinkTask {
     private static final Logger log = LoggerFactory.getLogger(MorphlineSinkTask.class);
 
-    private static final Converter JSON_CONVERTER;
-    static {
-        JSON_CONVERTER = new JsonConverter();
-        JSON_CONVERTER.configure(Collections.singletonMap("schemas.enable", "false"), false);
-    }
-
     protected MorphlineSinkConnectorConfig config;
-
-    private static final Object LOCK = new Object();
-    private static Compiler morphlineCompiler;
-    static {
-        morphlineCompiler = new Compiler();
-    }
-
     private MorphlineContext morphlineContext;
     private Command morphline;
     private Command finalChild;
     private String morphlineFileAndId;
-
-    public static final String MORPHLINE_FILE_PARAM = "morphlineFile";
-    public static final String MORPHLINE_ID_PARAM = "morphlineId";
 
     protected MorphlineSinkConnectorConfig config(Map<String, String> settings) {
         return new MorphlineSinkConnectorConfig(settings);
@@ -108,7 +94,7 @@ public class MorphlineSinkTask<T extends MorphlineSinkConnectorConfig> extends S
         String morphlineId = this.config.morphlineId;
 
         if (morphlineFilePath == null || morphlineFilePath.trim().length() == 0) {
-            throw new MorphlineCompilationException("Missing parameter: " + MORPHLINE_FILE_PARAM, null);
+            throw new MorphlineCompilationException("Missing parameter: " + MorphlineUtils.MORPHLINE_FILE_PARAM, null);
         }
         morphlineFileAndId = morphlineFilePath + "@" + morphlineId;
         log.debug("Running: " + morphlineFileAndId);
@@ -116,39 +102,16 @@ public class MorphlineSinkTask<T extends MorphlineSinkConnectorConfig> extends S
         if (morphlineContext == null) {
             morphlineContext = new MorphlineContext.Builder().build();
         }
-        Config morphlineFileConfig = ConfigFactory.empty();
-
-        if (morphlineFilePath.startsWith("file:")) {
-            morphlineFileConfig = ConfigFactory.parseFile(new File(morphlineFilePath.substring(morphlineFilePath.indexOf(":") + 1)));
-        } else if (morphlineFilePath.startsWith("url:")) {
-            try {
-                morphlineFileConfig = ConfigFactory.parseURL(new URL(morphlineFilePath.substring(morphlineFilePath.indexOf(":") + 1)));
-            } catch (java.net.MalformedURLException mue) {
-
-            }
-        } else if (morphlineFilePath.startsWith("resource:")) {
-            morphlineFileConfig = ConfigFactory.parseResources(getClass(), morphlineFilePath.substring(morphlineFilePath.indexOf(":") + 1));
-        } else if (morphlineFilePath.startsWith("include ")) {//TODO: broken for now need tests
-            morphlineFileConfig = ConfigFactory.parseString(morphlineFilePath);
-        } else {
-            morphlineFileConfig = ConfigFactory.parseFile(new File(morphlineFilePath));
-        }
-        if (morphlineFileConfig.isEmpty()) {
-            throw new MorphlineCompilationException("Invalid content from parameter: " + MORPHLINE_FILE_PARAM, null);
-        }
-        log.debug("MorphlineFileConfig Content: " + morphlineFileConfig);
         Config override = ConfigFactory.parseMap(getByPrefix(settings, "morphlines")).getConfig("morphlines");
-        log.debug("Overide Settings for Morphlines Task: " + override);
-        Config config = override.withFallback(morphlineFileConfig);
-        synchronized (LOCK) {
-            ConfigFactory.invalidateCaches();
-            config = ConfigFactory.load(config);
-            config.checkValid(ConfigFactory.defaultReference()); // eagerly validate aspects of tree config
+        if (finalChild == null && override.hasPath("topic") && override.getString("topic") != null) {
+            finalChild = new FinalCollector(override);
         }
-        Config morphlineConfig = morphlineCompiler.find(morphlineId, config, morphlineFilePath);
-        morphline = morphlineCompiler.compile(morphlineConfig, morphlineContext, finalChild);
+        log.debug("Overide Settings for Morphlines Task: " + override);
+        
+        morphline = MorphlineUtils.compile(getClass(), morphlineFilePath, morphlineId, morphlineContext, finalChild, override);
+        
     }
-
+    
     private static HashMap<String, String> getByPrefix(Map<String, String> myMap, String prefix) {
         HashMap<String, String> local = new HashMap<String, String>();
         for (Map.Entry<String, String> entry : myMap.entrySet()) {
@@ -164,32 +127,19 @@ public class MorphlineSinkTask<T extends MorphlineSinkConnectorConfig> extends S
         // process each input data file
         Notifications.notifyBeginTransaction(morphline);
         for (SinkRecord sinkRecord : collection) {
-            Record record = new Record();
-            record.put("kafkaTopic", sinkRecord.topic());
-            record.put("kafkaPartition", sinkRecord.kafkaPartition());
-            record.put("kafkaOffset", sinkRecord.kafkaOffset());
-            record.put("kafkaTimestamp", sinkRecord.timestamp());
-            record.put("kafkaTimestampType", sinkRecord.timestampType());
-            record.put("kafkaKey", sinkRecord.key());
-            record.put("kafkaKeySchema", sinkRecord.keySchema());
-            Object value = sinkRecord.value();
-            log.debug("Record Value: " + value);
-            Schema schema = sinkRecord.valueSchema();
-            log.debug("Record Schema: " + schema);
-            record.put("kafkaValue", value);
-            record.put("kafkaValueSchema", schema);
-            if (schema != null && schema.type() == Schema.Type.STRING) {
-                record.put(Fields.ATTACHMENT_BODY, ((String) sinkRecord.value()).getBytes(StandardCharsets.UTF_8));
-            } else {
-                final String payload = new String(JSON_CONVERTER.fromConnectData(sinkRecord.topic(), schema, value), StandardCharsets.UTF_8);
-                record.put(Fields.ATTACHMENT_BODY, payload.getBytes(StandardCharsets.UTF_8));
-            }
-            record.put(Fields.ATTACHMENT_CHARSET, StandardCharsets.UTF_8);
+            Record record = MorphlineUtils.fromConnectData(sinkRecord);
             // Notifications.notifyStartSession(morphline);
             if (!morphline.process(record)) {
                 log.warn("Record process failed sinkRecord: " + sinkRecord + " record:" + record);
                 // Notifications.notifyRollbackTransaction(morphline);
+            } else if (finalChild != null && finalChild instanceof FinalCollector) {
+                log.info("Record process completed collector record:" + ((FinalCollector) finalChild).getRecords());
+                //When there is configured morphlines.topic and as a result finalCollector 
+                //send the resulting record(s) to that topic if a morhphlines.bootstrap broker list
+                //is available to attach a producer to send via.
+                ((FinalCollector) finalChild).reset();
             }
+            
         }
         Notifications.notifyCommitTransaction(morphline);
     }

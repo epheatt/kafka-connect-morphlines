@@ -47,8 +47,23 @@ class Records {
     static MapTestCase map() {
         MapTestCase testCase = new MapTestCase();
 
-        testCase.map = ImmutableMap.of("firstName", "example", "lastName", "user", "email", "example.user@example.com", "age", 27);
-        testCase.record = new SinkRecord("testing", 1, null, null, null, testCase.map, 1L, 1484897702123L, TimestampType.CREATE_TIME);
+        testCase.map = ImmutableMap.of(
+                "firstName", "example", 
+                "lastName", "user", 
+                "email", "example.user@example.com", 
+                "age", 27
+            );
+        testCase.record = new SinkRecord(
+                "testing",
+                1, 
+                null, 
+                null, 
+                null, 
+                testCase.map, 
+                1L, 
+                1484897702123L, 
+                TimestampType.CREATE_TIME
+            );
 
         return testCase;
     }
@@ -56,12 +71,29 @@ class Records {
     static StructTestCase struct() {
         StructTestCase testCase = new StructTestCase();
 
-        Schema schema = SchemaBuilder.struct().name("Testing").field("firstName", Schema.OPTIONAL_STRING_SCHEMA)
-                .field("lastName", Schema.OPTIONAL_STRING_SCHEMA).field("email", Schema.OPTIONAL_STRING_SCHEMA)
-                .field("age", Schema.OPTIONAL_INT32_SCHEMA).build();
-        testCase.struct = new Struct(schema).put("firstName", "example").put("lastName", "user").put("email", "example.user@example.com")
+        Schema schema = SchemaBuilder.struct()
+                .name("Testing")
+                .field("firstName", Schema.OPTIONAL_STRING_SCHEMA)
+                .field("lastName", Schema.OPTIONAL_STRING_SCHEMA)
+                .field("email", Schema.OPTIONAL_STRING_SCHEMA)
+                .field("age", Schema.OPTIONAL_INT32_SCHEMA)
+                .build();
+        testCase.struct = new Struct(schema)
+                .put("firstName", "example")
+                .put("lastName", "user")
+                .put("email", "example.user@example.com")
                 .put("age", 27);
-        testCase.record = new SinkRecord("testing", 1, null, null, schema, testCase.struct, 2L, 1484897702123L, TimestampType.CREATE_TIME);
+        testCase.record = new SinkRecord(
+                "testing", 
+                1, 
+                null, 
+                null, 
+                schema, 
+                testCase.struct, 
+                2L, 
+                1484897702123L, 
+                TimestampType.CREATE_TIME
+            );
 
         return testCase;
     }
@@ -71,12 +103,26 @@ class Records {
 
         Schema schema = SchemaBuilder.string().name("Testing").build();
         testCase.string = "{\"firstName\":\"example\",\"lastName\":\"user\",\"email\":\"example.user@example.com\",\"age\":27}";
-        testCase.record = new SinkRecord("testing", 1, null, null, schema, testCase.string, 2L, 1484897702123L, TimestampType.CREATE_TIME);
+        testCase.record = new SinkRecord(
+                "testing", 
+                1, 
+                null, 
+                null, 
+                schema, 
+                testCase.string, 
+                3L, 
+                1484897702123L, 
+                TimestampType.CREATE_TIME
+            );
 
         return testCase;
     }
 
     static List<SinkRecord> records() {
-        return Arrays.asList(string().record, struct().record, map().record);
+        return Arrays.asList(
+                string().record, 
+                struct().record, 
+                map().record
+            );
     }
 }

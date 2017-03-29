@@ -87,7 +87,8 @@ public class MorphlineSinkTaskTest {
     public void testReadJson() {
         Map<String, String> settings = ImmutableMap.of(
                 "morphlines.morphlineFile", "resource:readjson.conf", 
-                "morphlines.morphlineId", "readjson"
+                "morphlines.morphlineId", "readjson",
+                "morphlines.topic", "readjson"
             );
         this.task.start(settings);
         List<SinkRecord> records = Records.records();
@@ -98,7 +99,8 @@ public class MorphlineSinkTaskTest {
     public void testReadLine() {
         Map<String, String> settings = ImmutableMap.of(
                 "morphlines.morphlineFile", "resource:readline.conf", 
-                "morphlines.morphlineId", "readline"
+                "morphlines.morphlineId", "readline",
+                "morphlines.topic", "readline"
             );
         this.task.start(settings);
         List<SinkRecord> records = new ArrayList<SinkRecord>();
