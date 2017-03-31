@@ -43,6 +43,7 @@
 
 	<properties>
 		<kafka.version>0.10.2.0</kafka.version>
+		<confluent.version>3.2.0</confluent.version>
 		<morphlines.version>1.1.0</morphlines.version>
 		<solr.version>6.4.1</solr.version>
 		<guava.version>18.0</guava.version>
@@ -97,12 +98,9 @@
 			<artifactId>guava</artifactId>
 			<version>${guava.version}</version>
 		</dependency>
-		<dependency>
-			<groupId>com.github.jcustenborder.kafka.connect</groupId>
-			<artifactId>connect-utils</artifactId>
-			<version>[0.2.33,0.2.1000)</version>
-			<scope>test</scope>
-		</dependency>
+		
+		
+		
 		<dependency>
 			<groupId>org.apache.kafka</groupId>
 			<artifactId>connect-api</artifactId>
@@ -121,13 +119,20 @@
 			<version>${kafka.version}</version>
 			<scope>provided</scope>
 		</dependency>
-
 		<dependency>
-			<groupId>com.github.jcustenborder.kafka.connect</groupId>
-			<artifactId>connect-utils-testing</artifactId>
-			<version>[0.2.33,0.2.1000)</version>
-			<scope>test</scope>
+			<groupId>io.confluent</groupId>
+			<artifactId>kafka-connect-avro-converter</artifactId>
+			<version>${confluent.version}</version>
+			<scope>provided</scope>
+			<exclusions>
+			    <exclusion>
+			        <groupId>org.slf4j</groupId>
+			        <artifactId>slf4j-log4j12</artifactId>
+			    </exclusion>
+			</exclusions> 
 		</dependency>
+
+
 		<dependency>
 			<groupId>org.junit.jupiter</groupId>
 			<artifactId>junit-jupiter-engine</artifactId>
@@ -153,7 +158,12 @@
 			<scope>test</scope>
 		</dependency>
 	</dependencies>
-
+	<repositories>
+		<repository>
+			<id>confluent</id>
+			<url>http://packages.confluent.io/maven/</url>
+		</repository>
+	</repositories>
 	<build>
 		<plugins>
 			<plugin>

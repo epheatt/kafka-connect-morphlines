@@ -16,17 +16,15 @@
 package com.github.epheatt.kafka.connect.morphlines;
 
 import com.google.common.collect.ImmutableMap;
+
 import org.apache.solr.client.solrj.SolrClient;
 import org.apache.solr.client.solrj.SolrRequest;
 import org.apache.solr.client.solrj.SolrServerException;
 import org.apache.solr.client.solrj.request.UpdateRequest;
 import org.apache.solr.common.util.NamedList;
+
 import org.apache.kafka.connect.sink.SinkRecord;
-import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Test;
-import org.mockito.Mockito;
-import org.mockito.invocation.InvocationOnMock;
-import org.mockito.stubbing.Answer;
+
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -34,6 +32,13 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
+
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+
+import org.mockito.Mockito;
+import org.mockito.invocation.InvocationOnMock;
+import org.mockito.stubbing.Answer;
 
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyMap;
@@ -70,7 +75,7 @@ public class MorphlineSinkTaskTest {
         });
     }
 
-    @Test
+    //@Test
     public void testLoadSolr() {
         Map<String, String> settings = ImmutableMap.of(
                 "morphlines.morphlineFile", "resource:httpsolr.conf", 
@@ -83,7 +88,7 @@ public class MorphlineSinkTaskTest {
         this.task.put(records);
     }
 
-    @Test
+   // @Test
     public void testReadJson() {
         Map<String, String> settings = ImmutableMap.of(
                 "morphlines.morphlineFile", "resource:readjson.conf", 
@@ -91,7 +96,23 @@ public class MorphlineSinkTaskTest {
                 "morphlines.topic", "readjson"
             );
         this.task.start(settings);
-        List<SinkRecord> records = Records.records();
+        //List<SinkRecord> records = Records.records();
+        List<SinkRecord> records = new ArrayList<SinkRecord>();
+        records.add(Records.map().record);
+        this.task.put(records);
+    }
+    
+    @Test
+    public void testReadAvro() {
+        Map<String, String> settings = ImmutableMap.of(
+                "morphlines.morphlineFile", "resource:readavro.conf", 
+                "morphlines.morphlineId", "readavro",
+                "morphlines.topic", "readavro"
+            );
+        this.task.start(settings);
+        //List<SinkRecord> records = Records.records();
+        List<SinkRecord> records = new ArrayList<SinkRecord>();
+        records.add(Records.struct().record);
         this.task.put(records);
     }
 

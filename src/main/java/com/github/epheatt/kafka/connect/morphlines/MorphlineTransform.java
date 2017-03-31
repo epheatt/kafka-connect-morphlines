@@ -21,7 +21,6 @@ import org.apache.kafka.common.cache.LRUCache;
 import org.apache.kafka.common.cache.SynchronizedCache;
 import org.apache.kafka.common.config.ConfigDef;
 import org.apache.kafka.common.config.ConfigException;
-
 import org.apache.kafka.connect.connector.ConnectRecord;
 import org.apache.kafka.connect.data.ConnectSchema;
 import org.apache.kafka.connect.data.Field;
@@ -32,7 +31,6 @@ import org.apache.kafka.connect.data.Timestamp;
 import org.apache.kafka.connect.transforms.Transformation;
 import org.apache.kafka.connect.transforms.util.SimpleConfig;
 import org.apache.kafka.connect.transforms.util.SchemaUtil;
-
 import org.kitesdk.morphline.api.Command;
 import org.kitesdk.morphline.api.MorphlineCompilationException;
 import org.kitesdk.morphline.api.MorphlineContext;
@@ -42,7 +40,6 @@ import org.kitesdk.morphline.base.FaultTolerance;
 import org.kitesdk.morphline.base.Fields;
 import org.kitesdk.morphline.base.Metrics;
 import org.kitesdk.morphline.base.Notifications;
-
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -88,6 +85,9 @@ public abstract class MorphlineTransform<R extends ConnectRecord<R>> implements 
             morphlineContext = new MorphlineContext.Builder().build();
         }
         Config override = ConfigFactory.parseMap(configs);
+        if (finalChild == null) {
+            finalChild = new FinalCollector(override);
+        }
         log.debug("Overide Settings for Morphlines Task: " + override);
         
         morphline = MorphlineUtils.compile(getClass(), morphlineFile, morphlineId, morphlineContext, finalChild, override);
@@ -103,7 +103,14 @@ public abstract class MorphlineTransform<R extends ConnectRecord<R>> implements 
             log.warn("Record process failed record: " + record + " connectRecord:" + connectRecord);
             Notifications.notifyRollbackTransaction(morphline);
             return null;
+        } else if (finalChild == null || ((FinalCollector) finalChild).getRecords().size() == 0) {
+            log.warn("Record process droped record: " + record + " connectRecord:" + connectRecord);
+            Notifications.notifyRollbackTransaction(morphline);
+            return null;
         }
+        log.info("Record process completed collector record:" + ((FinalCollector) finalChild).getRecords());
+        //send the resulting records from the FinalCollector command unless a dropRecord was issued
+        ((FinalCollector) finalChild).reset();
         Notifications.notifyCommitTransaction(morphline);
         return record;
     }

@@ -32,6 +32,9 @@ import org.apache.kafka.connect.sink.SinkRecord;
 import org.apache.kafka.connect.sink.SinkTask;
 import org.apache.kafka.connect.storage.Converter;
 
+import io.confluent.connect.avro.AvroData;
+import io.confluent.connect.avro.AvroDataConfig;
+
 import java.io.File;
 import java.net.URL;
 import java.nio.charset.StandardCharsets;
@@ -69,6 +72,13 @@ public class MorphlineUtils {
         JSON_CONVERTER.configure(Collections.singletonMap("schemas.enable", "false"), false);
     }
 
+    private static final AvroData AVRO_CONVERTER;
+    static {
+        AVRO_CONVERTER = new AvroData(new AvroDataConfig.Builder()
+                                        //.with(AvroDataConfig.SCHEMAS_CACHE_SIZE_CONFIG, cacheSize)
+                                        .build());
+    }
+    
     public static final String MORPHLINE_FILE_PARAM = "morphlineFile";
     public static final String MORPHLINE_ID_PARAM = "morphlineId";
     /** The MIME type identifier that will be filled into output records */
@@ -125,29 +135,15 @@ public class MorphlineUtils {
         record.put("keySchema", connectData.keySchema());
         record.put("value", value);
         record.put("valueSchema", schema);
-        if (schema != null && schema.type() == Schema.Type.STRING) {
-            record.put(Fields.ATTACHMENT_BODY, ((String) value).getBytes(StandardCharsets.UTF_8));
-            record.put(Fields.ATTACHMENT_MIME_TYPE, "text/plain");
-        } else {
-            final String payload = new String(JSON_CONVERTER.fromConnectData(topic, schema, value), StandardCharsets.UTF_8);
-            record.put(Fields.ATTACHMENT_BODY, payload.getBytes(StandardCharsets.UTF_8));
-            record.put(Fields.ATTACHMENT_MIME_TYPE, "application/json");
-        }
-        record.put(Fields.ATTACHMENT_CHARSET, StandardCharsets.UTF_8);
         return record;
     }
-    /*
-    public static ConnectRecord toConnectData(Record record) {
-        String topic = (String) record.getFirstValue("topic");
-        Integer kafkaPartition = (Integer) record.getFirstValue("kafkaPartition");
-        Schema keySchema = (Schema) record.getFirstValue("keySchema");
-        Object key = record.getFirstValue("key");
-        Schema valueSchema = (Schema) record.getFirstValue("valueSchema");
-        Object value = record.getFirstValue("keySchema");
-        Long timestamp = (Long) record.getFirstValue("timestamp");
-        ConnectRecord connectRecord = new ConnectRecord(topic, kafkaPartition, keySchema, key, valueSchema, value, timestamp) ;
-        return connectRecord;
+    
+    public static Object toConnectData(org.apache.avro.Schema schema, Object value) {
+        return AVRO_CONVERTER.toConnectData(schema, value).value();
     }
-    */
+    
+    public static Object fromConnectData(Schema schema, Object value) {
+        return AVRO_CONVERTER.fromConnectData(schema, value);
+    }
     
 }
