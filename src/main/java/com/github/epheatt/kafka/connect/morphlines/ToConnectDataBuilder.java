@@ -3,6 +3,9 @@ package com.github.epheatt.kafka.connect.morphlines;
 import io.confluent.connect.avro.AvroData;
 import io.confluent.connect.avro.AvroDataConfig;
 
+import org.apache.kafka.connect.data.SchemaBuilder;
+import org.apache.kafka.connect.data.Struct;
+import org.apache.kafka.connect.data.Field;
 import org.apache.kafka.connect.data.Schema;
 import org.apache.kafka.connect.json.JsonConverter;
 import org.apache.kafka.connect.storage.Converter;
@@ -11,6 +14,7 @@ import java.nio.charset.Charset;
 import java.nio.charset.StandardCharsets;
 import java.util.Collection;
 import java.util.Collections;
+import java.util.List;
 import java.util.Map;
 import java.util.HashMap;
 
@@ -92,28 +96,59 @@ public final class ToConnectDataBuilder implements CommandBuilder {
         @Override
         protected boolean doProcess(Record inputRecord) {
             Record outputRecord = inputRecord.copy();
-            AbstractParser.removeAttachments(outputRecord);
+            String topic = (String) inputRecord.getFirstValue(topicField);
             Schema schema = (Schema) inputRecord.getFirstValue("valueSchema");
-            org.apache.avro.Schema avroSchema = (org.apache.avro.Schema) inputRecord.getFirstValue(schemaField);
+            //org.apache.avro.Schema avroSchema = (org.apache.avro.Schema) inputRecord.getFirstValue(schemaField);
             if (schema == null) {
-                //inputRecord.replaceValues("valueSchema", AVRO_CONVERTER.toConnectSchema(avroSchema));
+                //schema = AVRO_CONVERTER.toConnectSchema(avroSchema);
+                //inputRecord.replaceValues("valueSchema", schema);
+                HashMap<String, Object> valueM = new HashMap<String, Object>();
+                for (Map.Entry<String, String> entry : mappings.entrySet()) {
+                    List list = inputRecord.get(entry.getValue());
+                    if (list.size() == 1) {
+                        valueM.put(entry.getKey(), list.get(0));
+                    } else if (list.size() == 1) {
+                        valueM.put(entry.getKey(), list);
+                    }
+                }
+                outputRecord.replaceValues(valueField, valueM);
+            } else if (schema.type() == Schema.STRING_SCHEMA.type() ) {
+                outputRecord.replaceValues(valueField, ((String) inputRecord.getFirstValue(Fields.ATTACHMENT_BODY)));
+            } else {
+                Struct valueS = new Struct(schema);
+                for (Field field : schema.fields()) {
+                    String morphlineFieldName = mappings.get(field.name());
+                    if (morphlineFieldName == null) {
+                      morphlineFieldName = field.name();
+                    }
+                    List list = inputRecord.get(morphlineFieldName);
+                    if (list.size() == 1) {
+                        valueS.put(field.name(), list.get(0));
+                    } else if (list.size() > 1) {
+                        valueS.put(field.name(), list);
+                    }
+                }
+                outputRecord.replaceValues(valueField, valueS);
             }
+            return super.doProcess(outputRecord);
+            /*
             Object value = inputRecord.getFirstValue(Fields.ATTACHMENT_BODY);
             switch (converterType.toLowerCase()) {
                 case "string":
-                    outputRecord.replaceValues(valueField, ((String) value).getBytes(characterSet));
+                    outputRecord.replaceValues(valueField, convertString(value));
                     break;
                 case "json":
-                    outputRecord.replaceValues(valueField, JSON_CONVERTER.toConnectData(topicField, ((String) value.toString()).getBytes(characterSet)).value());
+                    outputRecord.replaceValues(valueField, convertJson(topic, value));
                     break;
                 case "avro":
                 default:
-                    outputRecord.replaceValues(valueField, AVRO_CONVERTER.toConnectData(avroSchema, value).value());
+                    outputRecord.replaceValues(valueField, convertAvro(avroSchema, value));
             }
             // pass record to next command in chain:
             return super.doProcess(outputRecord);
+            */
         }
-
+        
     }
 
 }

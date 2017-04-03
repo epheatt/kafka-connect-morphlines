@@ -133,7 +133,8 @@ public class MorphlineSinkTask<T extends MorphlineSinkConnectorConfig> extends S
                 log.warn("Record process failed sinkRecord: " + sinkRecord + " record:" + record);
                 // Notifications.notifyRollbackTransaction(morphline);
             } else if (finalChild != null && finalChild instanceof FinalCollector) {
-                log.info("Record process completed collector records:" + (((FinalCollector) finalChild).getRecords().get(0).getFirstValue("value")).equals(sinkRecord.value()) + " sink: " + sinkRecord.value() );
+                List<Record> records = (List<Record>)((FinalCollector) finalChild).getRecords();
+                log.info("Record process completed collector records:" + (records.get(0).getFirstValue("value")).equals(sinkRecord.value()) + " sink: " + sinkRecord.value() + " records: " + records.get(0).getFirstValue("value") );
                 //When there is configured morphlines.topic and as a result finalCollector 
                 //send the resulting record(s) to that topic if a morhphlines.bootstrap broker list
                 //is available to attach a producer to send via.

@@ -88,7 +88,7 @@ public class MorphlineSinkTaskTest {
         this.task.put(records);
     }
 
-   // @Test
+    @Test
     public void testReadJson() {
         Map<String, String> settings = ImmutableMap.of(
                 "morphlines.morphlineFile", "resource:readjson.conf", 
