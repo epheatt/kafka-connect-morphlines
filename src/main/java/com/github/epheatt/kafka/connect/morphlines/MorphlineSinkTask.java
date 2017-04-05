@@ -94,7 +94,7 @@ public class MorphlineSinkTask<T extends MorphlineSinkConnectorConfig> extends S
         String morphlineId = this.config.morphlineId;
 
         if (morphlineFilePath == null || morphlineFilePath.trim().length() == 0) {
-            throw new MorphlineCompilationException("Missing parameter: " + MorphlineUtils.MORPHLINE_FILE_PARAM, null);
+            throw new MorphlineCompilationException("Missing parameter: " + MorphlineTransform.MORPHLINE_FILE_PARAM, null);
         }
         morphlineFileAndId = morphlineFilePath + "@" + morphlineId;
         log.debug("Running: " + morphlineFileAndId);
@@ -108,7 +108,7 @@ public class MorphlineSinkTask<T extends MorphlineSinkConnectorConfig> extends S
         }
         log.debug("Overide Settings for Morphlines Task: " + override);
         
-        morphline = MorphlineUtils.compile(getClass(), morphlineFilePath, morphlineId, morphlineContext, finalChild, override);
+        morphline = MorphlineTransform.compile(getClass(), morphlineFilePath, morphlineId, morphlineContext, finalChild, override);
         
     }
     
@@ -127,14 +127,14 @@ public class MorphlineSinkTask<T extends MorphlineSinkConnectorConfig> extends S
         // process each input data file
         Notifications.notifyBeginTransaction(morphline);
         for (SinkRecord sinkRecord : collection) {
-            Record record = MorphlineUtils.fromConnectData(sinkRecord);
+            Record record = MorphlineTransform.fromConnectData(sinkRecord);
             // Notifications.notifyStartSession(morphline);
             if (!morphline.process(record)) {
                 log.warn("Record process failed sinkRecord: " + sinkRecord + " record:" + record);
                 // Notifications.notifyRollbackTransaction(morphline);
             } else if (finalChild != null && finalChild instanceof FinalCollector) {
                 List<Record> records = (List<Record>)((FinalCollector) finalChild).getRecords();
-                log.info("Record process completed collector records:" + (records.get(0).getFirstValue("value")).equals(sinkRecord.value()) + " sink: " + sinkRecord.value() + " records: " + records.get(0).getFirstValue("value") );
+                log.info("Record process completed collector records:" + (records.get(0).getFirstValue("_value")).equals(sinkRecord.value()) + " sink: " + sinkRecord.value() + " records: " + records.get(0).getFirstValue("_value") );
                 //When there is configured morphlines.topic and as a result finalCollector 
                 //send the resulting record(s) to that topic if a morhphlines.bootstrap broker list
                 //is available to attach a producer to send via.

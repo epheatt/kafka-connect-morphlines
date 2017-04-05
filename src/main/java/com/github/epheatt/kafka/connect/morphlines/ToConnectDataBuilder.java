@@ -54,11 +54,6 @@ public final class ToConnectDataBuilder implements CommandBuilder {
         private final String valueField;
         private final String converterType;
         private final Charset characterSet;
-        private static final Converter JSON_CONVERTER;
-        static {
-            JSON_CONVERTER = new JsonConverter();
-            JSON_CONVERTER.configure(Collections.singletonMap("schemas.enable", "false"), false);
-        }
         private static final AvroData AVRO_CONVERTER;
         static {
             AVRO_CONVERTER = new AvroData(new AvroDataConfig.Builder()
@@ -69,7 +64,7 @@ public final class ToConnectDataBuilder implements CommandBuilder {
         public ToConnectData(CommandBuilder builder, Config config, Command parent, Command child, MorphlineContext context) {
             super(builder, config, parent, child, context);
 
-            this.topicField = getConfigs().getString(config, "topicField", "topic");
+            this.topicField = getConfigs().getString(config, "topicField", "_topic");
             this.schemaField = getConfigs().getString(config, "schemaField", null);
             
             int numDefinitions = 0;
@@ -81,8 +76,8 @@ public final class ToConnectDataBuilder implements CommandBuilder {
                 "Either schemaFile or schemaString or schemaField must be defined", config);
             }
             
-            this.valueField = getConfigs().getString(config, "valueField", "value");
-            this.converterType = getConfigs().getString(config, "converter", "avro");
+            this.valueField = getConfigs().getString(config, "valueField", "_value");
+            this.converterType = getConfigs().getString(config, "converter", null);
             this.characterSet = Charset.forName(getConfigs().getString(config, "characterSet", StandardCharsets.UTF_8.name()));
 
             
@@ -97,7 +92,7 @@ public final class ToConnectDataBuilder implements CommandBuilder {
         protected boolean doProcess(Record inputRecord) {
             Record outputRecord = inputRecord.copy();
             String topic = (String) inputRecord.getFirstValue(topicField);
-            Schema schema = (Schema) inputRecord.getFirstValue("valueSchema");
+            Schema schema = (Schema) inputRecord.getFirstValue(schemaField);
             //org.apache.avro.Schema avroSchema = (org.apache.avro.Schema) inputRecord.getFirstValue(schemaField);
             if (schema == null) {
                 //schema = AVRO_CONVERTER.toConnectSchema(avroSchema);

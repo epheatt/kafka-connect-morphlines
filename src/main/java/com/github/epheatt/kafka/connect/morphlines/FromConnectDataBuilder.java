@@ -1,7 +1,5 @@
 package com.github.epheatt.kafka.connect.morphlines;
 
-import com.github.epheatt.kafka.connect.morphlines.MorphlineUtils;
-
 
 import io.confluent.connect.avro.AvroData;
 import io.confluent.connect.avro.AvroDataConfig;
@@ -68,8 +66,8 @@ public final class FromConnectDataBuilder implements CommandBuilder {
         public FromConnectData(CommandBuilder builder, Config config, Command parent, Command child, MorphlineContext context) {
             super(builder, config, parent, child, context);
 
-            this.topicField = getConfigs().getString(config, "topicField", "topic");
-            this.schemaField = getConfigs().getString(config, "schemaField", "valueSchema");
+            this.topicField = getConfigs().getString(config, "topicField", "_topic");
+            this.schemaField = getConfigs().getString(config, "schemaField", "_valueSchema");
             
             int numDefinitions = 0;
             if (schemaField != null) {
@@ -80,7 +78,7 @@ public final class FromConnectDataBuilder implements CommandBuilder {
                 "Either schemaFile or schemaString or schemaField must be defined", config);
             }
             
-            this.valueField = getConfigs().getString(config, "valueField", "value");
+            this.valueField = getConfigs().getString(config, "valueField", "_value");
             this.converterType = getConfigs().getString(config, "converter", "avro");
             this.characterSet = Charset.forName(getConfigs().getString(config, "characterSet", StandardCharsets.UTF_8.name()));
 
@@ -112,7 +110,7 @@ public final class FromConnectDataBuilder implements CommandBuilder {
                     outputRecord.put(Fields.ATTACHMENT_MIME_TYPE, "application/avro");
             }
             outputRecord.put(Fields.ATTACHMENT_CHARSET, characterSet.name()); 
-            outputRecord.replaceValues("valueSchemaAvro", AVRO_CONVERTER.fromConnectSchema(schema));
+            outputRecord.replaceValues("_valueSchemaAvro", AVRO_CONVERTER.fromConnectSchema(schema));
             // pass record to next command in chain:
             return super.doProcess(outputRecord);
         }

@@ -22,6 +22,8 @@ import org.apache.kafka.common.cache.SynchronizedCache;
 import org.apache.kafka.common.config.ConfigDef;
 import org.apache.kafka.common.config.ConfigException;
 import org.apache.kafka.connect.connector.ConnectRecord;
+import org.apache.kafka.connect.sink.SinkRecord;
+import org.apache.kafka.connect.source.SourceRecord;
 import org.apache.kafka.connect.data.ConnectSchema;
 import org.apache.kafka.connect.data.Field;
 import org.apache.kafka.connect.data.Schema;
@@ -46,6 +48,8 @@ import org.slf4j.LoggerFactory;
 import com.typesafe.config.Config;
 import com.typesafe.config.ConfigFactory;
 
+import java.io.File;
+import java.net.URL;
 import java.util.Map;
 
 import static org.apache.kafka.connect.transforms.util.Requirements.requireMap;
@@ -54,8 +58,14 @@ import static org.apache.kafka.connect.transforms.util.Requirements.requireStruc
 public abstract class MorphlineTransform<R extends ConnectRecord<R>> implements Transformation<R> {
     private static final Logger log = LoggerFactory.getLogger(MorphlineTransform.class);
     
-    private static final String MORPHLINE_FILE_PARAM = "morphlineFile";
-    private static final String MORPHLINE_ID_PARAM = "morphlineId";
+    private static final Object LOCK = new Object();
+    private static Compiler morphlineCompiler;
+    static {
+        morphlineCompiler = new Compiler();
+    }
+    
+    public static final String MORPHLINE_FILE_PARAM = "morphlineFile";
+    public static final String MORPHLINE_ID_PARAM = "morphlineId";
     
     public static final ConfigDef CONFIG_DEF = new ConfigDef()
         .define(MORPHLINE_FILE_PARAM, ConfigDef.Type.STRING, null, ConfigDef.Importance.HIGH, "Morphline File Path to include.")
@@ -90,14 +100,14 @@ public abstract class MorphlineTransform<R extends ConnectRecord<R>> implements 
         }
         log.debug("Overide Settings for Morphlines Task: " + override);
         
-        morphline = MorphlineUtils.compile(getClass(), morphlineFile, morphlineId, morphlineContext, finalChild, override);
+        morphline = compile(getClass(), morphlineFile, morphlineId, morphlineContext, finalChild, override);
     }
     
     @Override
     public R apply(R record) {
         log.debug("Apply: " + morphlineFileAndId);
         //pass through no-op for now
-        Record connectRecord = MorphlineUtils.fromConnectData(record);
+        Record connectRecord = fromConnectData(record);
         Notifications.notifyBeginTransaction(morphline);
         if (!morphline.process(connectRecord)) {
             log.warn("Record process failed record: " + record + " connectRecord:" + connectRecord);
@@ -113,6 +123,60 @@ public abstract class MorphlineTransform<R extends ConnectRecord<R>> implements 
         ((FinalCollector) finalChild).reset();
         Notifications.notifyCommitTransaction(morphline);
         return record;
+    }
+    
+    public static Record fromConnectData(ConnectRecord connectData) {
+        String topic = connectData.topic();
+        log.debug("Record Topic: " + topic);
+        Object value = connectData.value();
+        log.debug("Record Value: " + value);
+        Schema schema = connectData.valueSchema();
+        log.debug("Record Schema: " + schema);
+        Record record = new Record();
+        record.put("_topic", topic);
+        record.put("_kafkaPartition", connectData.kafkaPartition());
+        if (connectData instanceof SinkRecord) {
+            record.put("_kafkaOffset", ((SinkRecord) connectData).kafkaOffset());
+            record.put("_timestamp", ((SinkRecord) connectData).timestamp());
+            record.put("_timestampType", ((SinkRecord) connectData).timestampType());
+        }
+        record.put("_key", connectData.key());
+        record.put("_keySchema", connectData.keySchema());
+        record.put("_value", value);
+        record.put("_valueSchema", schema);
+        return record;
+    }
+    
+    public static Command compile(Class clazz, String morphlineFilePath, String morphlineId, MorphlineContext morphlineContext, Command finalChild, Config override) throws MorphlineCompilationException {
+        Config morphlineFileConfig = ConfigFactory.empty();
+
+        if (morphlineFilePath.startsWith("url:")) {
+            try {
+                morphlineFileConfig = ConfigFactory.parseURL(new URL(morphlineFilePath.substring(morphlineFilePath.indexOf(":") + 1)));
+            } catch (java.net.MalformedURLException mue) {
+
+            }
+        } else if (morphlineFilePath.startsWith("resource:")) {
+            morphlineFileConfig = ConfigFactory.parseResources(clazz, morphlineFilePath.substring(morphlineFilePath.indexOf(":") + 1));
+        } else if (morphlineFilePath.startsWith("include ")) {//TODO: broken for now need tests
+            morphlineFileConfig = ConfigFactory.parseString(morphlineFilePath);
+        } else if (morphlineFilePath.startsWith("file:")) {
+            morphlineFileConfig = ConfigFactory.parseFile(new File(morphlineFilePath.substring(morphlineFilePath.indexOf(":") + 1)));
+        } else {
+            morphlineFileConfig = ConfigFactory.parseFile(new File(morphlineFilePath));
+        }
+        if (morphlineFileConfig.isEmpty()) {
+            throw new MorphlineCompilationException("Invalid content from parameter: " + MORPHLINE_FILE_PARAM, null);
+        }
+        log.debug("MorphlineFileConfig Content: " + morphlineFileConfig);
+        Config config = override.withFallback(morphlineFileConfig);
+        synchronized (LOCK) {
+            ConfigFactory.invalidateCaches();
+            config = ConfigFactory.load(config);
+            config.checkValid(ConfigFactory.defaultReference()); // eagerly validate aspects of tree config
+        }
+        Config morphlineConfig = morphlineCompiler.find(morphlineId, config, morphlineFilePath);
+        return morphlineCompiler.compile(morphlineConfig, morphlineContext, finalChild);
     }
     
     @Override
