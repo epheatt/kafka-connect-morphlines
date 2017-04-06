@@ -107,7 +107,7 @@ public abstract class MorphlineTransform<R extends ConnectRecord<R>> implements 
     public R apply(R record) {
         log.debug("Apply: " + morphlineFileAndId);
         //pass through no-op for now
-        Record connectRecord = fromConnectData(record);
+        Record connectRecord = fromConnectData((ConnectRecord) record);
         Notifications.notifyBeginTransaction(morphline);
         if (!morphline.process(connectRecord)) {
             log.warn("Record process failed record: " + record + " connectRecord:" + connectRecord);
@@ -119,10 +119,11 @@ public abstract class MorphlineTransform<R extends ConnectRecord<R>> implements 
             return null;
         }
         log.info("Record process completed collector record:" + ((FinalCollector) finalChild).getRecords());
+        connectRecord = ((FinalCollector) finalChild).getRecords().get(0);
         //send the resulting records from the FinalCollector command unless a dropRecord was issued
         ((FinalCollector) finalChild).reset();
         Notifications.notifyCommitTransaction(morphline);
-        return record;
+        return connectRecord == null ? null : (R) (toConnectData((ConnectRecord) record, connectRecord));
     }
     
     public static Record fromConnectData(ConnectRecord connectData) {
@@ -135,16 +136,30 @@ public abstract class MorphlineTransform<R extends ConnectRecord<R>> implements 
         Record record = new Record();
         record.put("_topic", topic);
         record.put("_kafkaPartition", connectData.kafkaPartition());
+        record.put("_key", connectData.key());
+        record.put("_keySchema", connectData.keySchema());
+        record.put("_value", value);
+        record.put("_valueSchema", schema);
         if (connectData instanceof SinkRecord) {
             record.put("_kafkaOffset", ((SinkRecord) connectData).kafkaOffset());
             record.put("_timestamp", ((SinkRecord) connectData).timestamp());
             record.put("_timestampType", ((SinkRecord) connectData).timestampType());
         }
-        record.put("_key", connectData.key());
-        record.put("_keySchema", connectData.keySchema());
-        record.put("_value", value);
-        record.put("_valueSchema", schema);
         return record;
+    }
+    
+    public static ConnectRecord toConnectData(ConnectRecord connectData, Record record) {
+        String topic = (String) record.getFirstValue("_topic");
+        log.debug("Record Topic: " + topic);
+        Integer kafkaPartition = (Integer) record.getFirstValue("_kafkaPartition");
+        Schema keySchema = (Schema) record.getFirstValue("_keySchema");
+        Object key = (Object) record.getFirstValue("_key");
+        Schema valueSchema = (Schema) record.getFirstValue("_valueSchema");
+        log.debug("Record Schema: " + valueSchema);
+        Object value = (Object) record.getFirstValue("_value");
+        log.debug("Record Value: " + value);
+        Long timestamp = (Long) record.getFirstValue("_timestamp");
+        return connectData.newRecord(topic, kafkaPartition, keySchema, key, valueSchema, value, timestamp);
     }
     
     public static Command compile(Class clazz, String morphlineFilePath, String morphlineId, MorphlineContext morphlineContext, Command finalChild, Config override) throws MorphlineCompilationException {
