@@ -10,7 +10,7 @@
 
     <logger name="com.github.epheatt.kafka.connect.morphlines" level="TRACE" />
 
-    <root level="TRACE">
+    <root level="INFO">
         <appender-ref ref="STDOUT" />
     </root>
 </configuration>
