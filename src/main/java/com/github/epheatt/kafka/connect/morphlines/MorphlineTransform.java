@@ -48,6 +48,7 @@ import org.slf4j.LoggerFactory;
 import com.typesafe.config.Config;
 import com.typesafe.config.ConfigFactory;
 
+import org.eclipse.core.runtime.URIUtil;
 import java.io.File;
 import java.net.URL;
 import java.util.Map;
@@ -165,21 +166,20 @@ public abstract class MorphlineTransform<R extends ConnectRecord<R>> implements 
     public static Command compile(Class clazz, String morphlineFilePath, String morphlineId, MorphlineContext morphlineContext, Command finalChild, Config override) throws MorphlineCompilationException {
         Config morphlineFileConfig = ConfigFactory.empty();
 
-        if (morphlineFilePath.startsWith("url:")) {
-            try {
-                morphlineFileConfig = ConfigFactory.parseURL(new URL(morphlineFilePath.substring(morphlineFilePath.indexOf(":") + 1)));
-            } catch (java.net.MalformedURLException mue) {
-
-            }
-        } else if (morphlineFilePath.startsWith("resource:")) {
+        if (morphlineFilePath.startsWith("resource:")) {
             morphlineFileConfig = ConfigFactory.parseResources(clazz, morphlineFilePath.substring(morphlineFilePath.indexOf(":") + 1));
         } else if (morphlineFilePath.startsWith("include ")) {//TODO: broken for now need tests
             morphlineFileConfig = ConfigFactory.parseString(morphlineFilePath);
-        } else if (morphlineFilePath.startsWith("file:")) {
-            morphlineFileConfig = ConfigFactory.parseFile(new File(morphlineFilePath.substring(morphlineFilePath.indexOf(":") + 1)));
         } else {
-            morphlineFileConfig = ConfigFactory.parseFile(new File(morphlineFilePath));
+            try {
+                morphlineFileConfig = ConfigFactory.parseURL(URIUtil.toURL(URIUtil.fromString(morphlineFilePath)));
+            } catch (java.net.MalformedURLException mue) {
+                log.debug("MorphlineFileConfig mue:" + mue.getMessage());
+            } catch (java.net.URISyntaxException use) {
+                log.debug("MorphlineFileConfig use:" + use.getMessage());
+            }
         }
+        
         if (morphlineFileConfig.isEmpty()) {
             throw new MorphlineCompilationException("Invalid content from parameter: " + MORPHLINE_FILE_PARAM, null);
         }

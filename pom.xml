@@ -58,6 +58,11 @@
 			<version>${morphlines.version}</version>
 		</dependency>
 		<dependency>
+		    <groupId>org.eclipse.core</groupId>
+		    <artifactId>org.eclipse.core.runtime</artifactId>
+		    <version>[3.2.0,3.10.0)</version>
+		</dependency>
+		<dependency>
 			<groupId>org.kitesdk</groupId>
 			<artifactId>kite-morphlines-avro</artifactId>
 			<version>${morphlines.version}</version>
@@ -67,6 +72,7 @@
 			<artifactId>kite-morphlines-json</artifactId>
 			<version>${morphlines.version}</version>
 		</dependency>
+		
 		<dependency>
 			<groupId>org.apache.solr</groupId>
 			<artifactId>solr-solrj</artifactId>

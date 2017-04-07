@@ -51,14 +51,91 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 
 public class MorphlineTransformTest {
 
+    //@Test 
+    void testNoOpHttp() {
+        final MorphlineTransform<SinkRecord> xform = new MorphlineTransform.Value<>();
+
+        Map<String, String> settings = ImmutableMap.of(
+                "morphlineFile", "https://raw.githubusercontent.com/kite-sdk/kite/738b397cf1f8b1fbea4fbe9bda017839081d9f37/kite-morphlines/kite-morphlines-core/src/test/resources/test-morphlines/parseInclude.conf",
+                "morphlineId", "morphline1"
+            );
+        xform.configure(settings);
+
+        final Schema schema = SchemaBuilder.struct()
+                .field("dont", Schema.STRING_SCHEMA)
+                .build();
+
+        final Struct value = new Struct(schema);
+        value.put("dont", "whatever");
+
+        final SinkRecord record = new SinkRecord("test", 0, null, null, schema, value, 0);
+        final SinkRecord transformedRecord = xform.apply(record);
+
+        final Struct updatedValue = (Struct) transformedRecord.value();
+
+        assertEquals(1, updatedValue.schema().fields().size());
+        assertEquals("whatever", updatedValue.getString("dont"));
+    }
+    
+    //@Test 
+    void testNoOpInclude() {
+        final MorphlineTransform<SinkRecord> xform = new MorphlineTransform.Value<>();
+
+        Map<String, String> settings = ImmutableMap.of(
+                "morphlineFile", "include \"file(../../src/test/resources/com/github/epheatt/kafka/connect/morphlines/identity.conf)\"", 
+                "morphlineId", "noop"
+            );
+        xform.configure(settings);
+
+        final Schema schema = SchemaBuilder.struct()
+                .field("dont", Schema.STRING_SCHEMA)
+                .build();
+
+        final Struct value = new Struct(schema);
+        value.put("dont", "whatever");
+
+        final SinkRecord record = new SinkRecord("test", 0, null, null, schema, value, 0);
+        final SinkRecord transformedRecord = xform.apply(record);
+
+        final Struct updatedValue = (Struct) transformedRecord.value();
+
+        assertEquals(1, updatedValue.schema().fields().size());
+        assertEquals("whatever", updatedValue.getString("dont"));
+    }
+    
+    //@Test 
+    void testNoOpFile() {
+        final MorphlineTransform<SinkRecord> xform = new MorphlineTransform.Value<>();
+
+        Map<String, String> settings = ImmutableMap.of(
+                "morphlineFile", "file:../../src/test/resources/com/github/epheatt/kafka/connect/morphlines/identity.conf", 
+                "morphlineId", "noop"
+            );
+        xform.configure(settings);
+
+        final Schema schema = SchemaBuilder.struct()
+                .field("dont", Schema.STRING_SCHEMA)
+                .build();
+
+        final Struct value = new Struct(schema);
+        value.put("dont", "whatever");
+
+        final SinkRecord record = new SinkRecord("test", 0, null, null, schema, value, 0);
+        final SinkRecord transformedRecord = xform.apply(record);
+
+        final Struct updatedValue = (Struct) transformedRecord.value();
+
+        assertEquals(1, updatedValue.schema().fields().size());
+        assertEquals("whatever", updatedValue.getString("dont"));
+    }
+    
     @Test 
-    public void testNoOp() {
+    public void testNoOpResource() {
         final MorphlineTransform<SinkRecord> xform = new MorphlineTransform.Value<>();
 
         Map<String, String> settings = ImmutableMap.of(
                 "morphlineFile", "resource:identity.conf", 
-                "morphlineId", "noop",
-                "topic", "noop"
+                "morphlineId", "noop"
             );
         xform.configure(settings);
 
@@ -91,8 +168,7 @@ public class MorphlineTransformTest {
 
         Map<String, String> settings = ImmutableMap.of(
                 "morphlineFile", "resource:identity.conf", 
-                "morphlineId", "readjson",
-                "topic", "readjson"
+                "morphlineId", "readjson"
             );
         xform.configure(settings);
 
@@ -113,8 +189,7 @@ public class MorphlineTransformTest {
 
         Map<String, String> settings = ImmutableMap.of(
                 "morphlineFile", "resource:identity.conf", 
-                "morphlineId", "readavro",
-                "topic", "readavro"
+                "morphlineId", "readavro"
             );
         xform.configure(settings);
 
@@ -135,8 +210,7 @@ public class MorphlineTransformTest {
 
         Map<String, String> settings = ImmutableMap.of(
                 "morphlineFile", "resource:identity.conf", 
-                "morphlineId", "readline",
-                "topic", "readline"
+                "morphlineId", "readline"
             );
         xform.configure(settings);
 
