@@ -5,11 +5,14 @@ import java.util.List;
 
 import org.kitesdk.morphline.api.Command;
 import org.kitesdk.morphline.api.Record;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import com.google.common.base.Preconditions;
 import com.typesafe.config.Config;
 
 public class FinalCollector implements Command {
+    private static final Logger log = LoggerFactory.getLogger(FinalCollector.class);
 
     private final List<Record> results = new ArrayList<Record>();
     private final Config configs;

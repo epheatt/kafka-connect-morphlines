@@ -24,11 +24,14 @@ import org.kitesdk.morphline.base.AbstractCommand;
 import org.kitesdk.morphline.base.Configs;
 import org.kitesdk.morphline.base.Fields;
 import org.kitesdk.morphline.stdio.AbstractParser;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import com.typesafe.config.Config;
 import com.typesafe.config.ConfigFactory;
 
 public final class FromConnectDataBuilder implements CommandBuilder {
+    private static final Logger log = LoggerFactory.getLogger(FromConnectDataBuilder.class);
 
     @Override
     public Collection<String> getNames() {
@@ -45,6 +48,8 @@ public final class FromConnectDataBuilder implements CommandBuilder {
     // /////////////////////////////////////////////////////////////////////////////
     /** Implementation that does logging and metrics */
     private static final class FromConnectData extends AbstractCommand {
+        private static final Logger log = LoggerFactory.getLogger(FromConnectData.class);
+        
         private final String topicField;
         private final String schemaField;
         private final String valueField;

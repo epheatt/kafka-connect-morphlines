@@ -51,6 +51,12 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 
 public class MorphlineTransformTest {
 
+    @BeforeEach
+    public void before() {
+        System.setProperty("CONNECT_BOOTSTRAP_SERVERS", "localhost:9092");
+        System.setProperty("CONNECT_SCHEMA_REGISTRY_URL", "http://localhost:8081");
+    }
+    
     //@Test 
     void testNoOpHttp() {
         final MorphlineTransform<SinkRecord> xform = new MorphlineTransform.Value<>();
@@ -132,7 +138,7 @@ public class MorphlineTransformTest {
     @Test 
     public void testNoOpResource() {
         final MorphlineTransform<SinkRecord> xform = new MorphlineTransform.Value<>();
-
+        
         Map<String, String> settings = ImmutableMap.of(
                 "morphlineFile", "resource:identity.conf", 
                 "morphlineId", "noop"

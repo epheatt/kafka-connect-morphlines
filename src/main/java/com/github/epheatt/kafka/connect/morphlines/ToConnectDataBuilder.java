@@ -1,3 +1,18 @@
+/**
+ * Copyright © 2017 Eric Pheatt (epheatt@gmail.com)
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
 package com.github.epheatt.kafka.connect.morphlines;
 
 import io.confluent.connect.avro.AvroData;
@@ -27,12 +42,15 @@ import org.kitesdk.morphline.base.AbstractCommand;
 import org.kitesdk.morphline.base.Configs;
 import org.kitesdk.morphline.base.Fields;
 import org.kitesdk.morphline.stdio.AbstractParser;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import com.typesafe.config.Config;
 import com.typesafe.config.ConfigFactory;
 
 public final class ToConnectDataBuilder implements CommandBuilder {
-
+    private static final Logger log = LoggerFactory.getLogger(ToConnectDataBuilder.class);
+    
     @Override
     public Collection<String> getNames() {
         return Collections.singletonList("toConnectData");
@@ -48,11 +66,12 @@ public final class ToConnectDataBuilder implements CommandBuilder {
     // /////////////////////////////////////////////////////////////////////////////
     /** Implementation that does logging and metrics */
     private static final class ToConnectData extends AbstractCommand {
+        private static final Logger log = LoggerFactory.getLogger(ToConnectData.class);
+
         private final Map<String, String> mappings = new HashMap<String, String>();
         private final String topicField;
         private final String schemaField;
         private final String valueField;
-        private final String converterType;
         private final Charset characterSet;
         private static final AvroData AVRO_CONVERTER;
         static {
@@ -77,9 +96,7 @@ public final class ToConnectDataBuilder implements CommandBuilder {
             }
             
             this.valueField = getConfigs().getString(config, "valueField", "_value");
-            this.converterType = getConfigs().getString(config, "converter", null);
             this.characterSet = Charset.forName(getConfigs().getString(config, "characterSet", StandardCharsets.UTF_8.name()));
-
             
             Config mappingsConfig = getConfigs().getConfig(config, "mappings", ConfigFactory.empty());
             for (Map.Entry<String, Object> entry : new Configs().getEntrySet(mappingsConfig)) {
