@@ -55,6 +55,7 @@ public class MorphlineTransformTest {
     public void before() {
         System.setProperty("CONNECT_BOOTSTRAP_SERVERS", "localhost:9092");
         System.setProperty("CONNECT_SCHEMA_REGISTRY_URL", "http://localhost:8081");
+        System.setProperty("CONNECT_KAFKA_REST_URL", "http://localhost:8082");
     }
     
     //@Test 

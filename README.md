@@ -78,6 +78,7 @@ curl -X POST -H 'Content-type:application/json' --data-binary '{
   "delete-dynamic-field":{ "name":"*_txt_tr" },
   "delete-field-type":{ "name":"text_tr" }
 }' http://localhost:8983/solr/twitter/schema
+
 curl http://localhost:8983/solr/twitter/config -H 'Content-type:application/json' -d'{
     "set-property" : {
     	"updateHandler.autoSoftCommit.maxTime":1000
