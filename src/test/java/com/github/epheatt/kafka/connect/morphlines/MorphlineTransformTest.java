@@ -34,8 +34,8 @@ import java.util.List;
 import java.util.Map;
 
 import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
-
 import org.mockito.Mockito;
 import org.mockito.invocation.InvocationOnMock;
 import org.mockito.stubbing.Answer;
@@ -46,10 +46,10 @@ import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 import static org.mockito.Mockito.withSettings;
-
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
 public class MorphlineTransformTest {
+    private static final Logger log = LoggerFactory.getLogger(MorphlineTransformTest.class);
 
     @BeforeEach
     public void before() {
@@ -58,7 +58,8 @@ public class MorphlineTransformTest {
         System.setProperty("CONNECT_KAFKA_REST_URL", "http://localhost:8082");
     }
     
-    //@Test 
+    @Disabled
+    @Test 
     void testNoOpHttp() {
         final MorphlineTransform<SinkRecord> xform = new MorphlineTransform<>();
 
@@ -84,8 +85,9 @@ public class MorphlineTransformTest {
         assertEquals("whatever", updatedValue.getString("dont"));
     }
     
-    //@Test 
-    void testNoOpInclude() {
+    @Disabled
+    @Test 
+    void testNoOpIncludeFile() {
         final MorphlineTransform<SinkRecord> xform = new MorphlineTransform<>();
 
         Map<String, String> settings = ImmutableMap.of(
@@ -110,8 +112,9 @@ public class MorphlineTransformTest {
         assertEquals("whatever", updatedValue.getString("dont"));
     }
     
-    //@Test 
-    void testNoOpFile() {
+    @Disabled
+    @Test 
+    void testNoOpRelativeFile() {
         final MorphlineTransform<SinkRecord> xform = new MorphlineTransform<>();
 
         Map<String, String> settings = ImmutableMap.of(
@@ -167,6 +170,35 @@ public class MorphlineTransformTest {
         assertEquals(4, updatedValue.schema().fields().size());
         assertEquals(new Integer(42), updatedValue.getInt32("abc"));
         assertEquals(true, updatedValue.getBoolean("foo"));
+    }
+    
+    @Test 
+    public void testDrop() {
+        final MorphlineTransform<SinkRecord> xform = new MorphlineTransform<>();
+        
+        Map<String, String> settings = ImmutableMap.of(
+                "morphlineFile", "resource:transform.conf", 
+                "morphlineId", "drop"
+            );
+        xform.configure(settings);
+
+        final Schema schema = SchemaBuilder.struct()
+                .field("dont", Schema.STRING_SCHEMA)
+                .field("abc", Schema.INT32_SCHEMA)
+                .field("foo", Schema.BOOLEAN_SCHEMA)
+                .field("etc", Schema.STRING_SCHEMA)
+                .build();
+
+        final Struct value = new Struct(schema);
+        value.put("dont", "whatever");
+        value.put("abc", 42);
+        value.put("foo", true);
+        value.put("etc", "etc");
+
+        final SinkRecord record = new SinkRecord("test", 0, null, null, schema, value, 0);
+        final SinkRecord transformedRecord = xform.apply(record);
+        
+        assertEquals(null, transformedRecord);
     }
     
     @Test
