@@ -60,7 +60,7 @@ public class MorphlineTransformTest {
     
     //@Test 
     void testNoOpHttp() {
-        final MorphlineTransform<SinkRecord> xform = new MorphlineTransform.Value<>();
+        final MorphlineTransform<SinkRecord> xform = new MorphlineTransform<>();
 
         Map<String, String> settings = ImmutableMap.of(
                 "morphlineFile", "https://raw.githubusercontent.com/kite-sdk/kite/738b397cf1f8b1fbea4fbe9bda017839081d9f37/kite-morphlines/kite-morphlines-core/src/test/resources/test-morphlines/parseInclude.conf",
@@ -86,7 +86,7 @@ public class MorphlineTransformTest {
     
     //@Test 
     void testNoOpInclude() {
-        final MorphlineTransform<SinkRecord> xform = new MorphlineTransform.Value<>();
+        final MorphlineTransform<SinkRecord> xform = new MorphlineTransform<>();
 
         Map<String, String> settings = ImmutableMap.of(
                 "morphlineFile", "include \"file(../../src/test/resources/com/github/epheatt/kafka/connect/morphlines/identity.conf)\"", 
@@ -112,7 +112,7 @@ public class MorphlineTransformTest {
     
     //@Test 
     void testNoOpFile() {
-        final MorphlineTransform<SinkRecord> xform = new MorphlineTransform.Value<>();
+        final MorphlineTransform<SinkRecord> xform = new MorphlineTransform<>();
 
         Map<String, String> settings = ImmutableMap.of(
                 "morphlineFile", "file:../../src/test/resources/com/github/epheatt/kafka/connect/morphlines/identity.conf", 
@@ -138,7 +138,7 @@ public class MorphlineTransformTest {
     
     @Test 
     public void testNoOpResource() {
-        final MorphlineTransform<SinkRecord> xform = new MorphlineTransform.Value<>();
+        final MorphlineTransform<SinkRecord> xform = new MorphlineTransform<>();
         
         Map<String, String> settings = ImmutableMap.of(
                 "morphlineFile", "resource:identity.conf", 
@@ -171,7 +171,7 @@ public class MorphlineTransformTest {
     
     @Test
     public void testReadJson() {
-        final MorphlineTransform<SinkRecord> xform = new MorphlineTransform.Value<>();
+        final MorphlineTransform<SinkRecord> xform = new MorphlineTransform<>();
 
         Map<String, String> settings = ImmutableMap.of(
                 "morphlineFile", "resource:identity.conf", 
@@ -192,7 +192,7 @@ public class MorphlineTransformTest {
 
     @Test
     public void testReadAvro() {
-        final MorphlineTransform<SinkRecord> xform = new MorphlineTransform.Value<>();
+        final MorphlineTransform<SinkRecord> xform = new MorphlineTransform<>();
 
         Map<String, String> settings = ImmutableMap.of(
                 "morphlineFile", "resource:identity.conf", 
@@ -213,7 +213,7 @@ public class MorphlineTransformTest {
 
     @Test
     public void testReadLine() {
-        final MorphlineTransform<SinkRecord> xform = new MorphlineTransform.Value<>();
+        final MorphlineTransform<SinkRecord> xform = new MorphlineTransform<>();
 
         Map<String, String> settings = ImmutableMap.of(
                 "morphlineFile", "resource:identity.conf", 

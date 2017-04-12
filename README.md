@@ -95,7 +95,15 @@ curl -X POST -H "Content-Type: application/json" \
   --data '{"name": "quickstart-text-file-source", "config": {"connector.class":"org.apache.kafka.connect.file.FileStreamSourceConnector", "tasks.max":"1","key.converter":"org.apache.kafka.connect.storage.StringConverter","value.converter":"org.apache.kafka.connect.storage.StringConverter","key.converter.schemas.enable":false,"value.converter.schemas.enable":false,"topic":"twitter-string", "file": "/etc/kafka-connect/jars/twitter-string.txt"}}' \
   http://0.0.0.0:8082/connectors
   
+curl -X POST -H "Content-Type: application/json" \
+  --data '{"name":"quickstart-text-file-transform-source","config":{"connector.class":"org.apache.kafka.connect.file.FileStreamSourceConnector","tasks.max":"1","key.converter":"org.apache.kafka.connect.storage.StringConverter","value.converter":"org.apache.kafka.connect.storage.StringConverter","key.converter.schemas.enable":false,"value.converter.schemas.enable":false,"topic":"twitter-avro","file":"/etc/kafka-connect/jars/twitter-string.txt","transforms.morphline.type":"com.github.epheatt.kafka.connect.morphlines.MorphlineTransform","transforms.morphline.morphlineFile":"file:/etc/kafka-connect/jars/transform.conf","transforms.morphline.morphlineId":"transform"}}' \
+  http://0.0.0.0:8082/connectors  
+  
 cat config/twitter.txt >> target/twitter-string.txt  
+
+curl -X POST -H "Content-Type: application/json"   
+  --data '{"name":"morphlines-producer-sink","config":{"connector.class":"com.github.epheatt.kafka.connect.morphlines.MorphlineSinkConnector", "tasks.max":1,"key.converter":"org.apache.kafka.connect.storage.StringConverter","value.converter":"org.apache.kafka.connect.storage.StringConverter","key.converter.schemas.enable":false,"value.converter.schemas.enable":false,"topics":"twitter-string","morphlines.morphlineId":"producer","morphlines.morphlineFile":"file:/etc/kafka-connect/jars/producer.conf","morphlines.zkHost":"zookeeper:2181","morphlines.collection":"twitter"}}' \
+  http://0.0.0.0:8082/connectors
 
 curl -X POST -H "Content-Type: application/json" \
   --data '{"name": "quickstart-json-file-source", "config": {"connector.class":"org.apache.kafka.connect.file.FileStreamSourceConnector", "tasks.max":"1","key.converter":"org.apache.kafka.connect.storage.StringConverter","value.converter":"org.apache.kafka.connect.json.JsonConverter","key.converter.schemas.enable":false,"value.converter.schemas.enable":false,"topic":"twitter-json", "file": "/etc/kafka-connect/jars/twitter-json.txt"}}' \
@@ -133,6 +141,10 @@ docker run -it \
 /usr/bin/kafka-console-producer   --broker-list kafka:9092 --topic twitter-json
 {"name":"quickstart-json-console-source"}
 
+
+curl -X POST -H "Content-Type: application/json" \
+	--data '{"name":"quickstart-text-file-transform-source","config":{"connector.class":"org.apache.kafka.connect.file.FileStreamSourceConnector","tasks.max":"1","key.converter":"org.apache.kafka.connect.storage.StringConverter","value.converter":"org.apache.kafka.connect.storage.StringConverter","key.converter.schemas.enable":true,"value.converter.schemas.enable":true,"topic":"twitter-avro2","file":"/etc/kafka-connect/jars/twitter-avro2-string.txt","transforms":"morphline","transforms.morphline.type":"com.github.epheatt.kafka.connect.morphlines.MorphlineTransform","transforms.morphline.morphlineFile":"file:///etc/kafka-connect/jars/transform.conf","transforms.morphline.morphlineId":"transform"}}' \ 
+	http://0.0.0.0:8082/connectors
 
 ```
 

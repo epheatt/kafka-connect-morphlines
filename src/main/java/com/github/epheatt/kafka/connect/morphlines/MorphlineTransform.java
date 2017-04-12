@@ -56,7 +56,7 @@ import java.util.Map;
 import static org.apache.kafka.connect.transforms.util.Requirements.requireMap;
 import static org.apache.kafka.connect.transforms.util.Requirements.requireStruct;
 
-public abstract class MorphlineTransform<R extends ConnectRecord<R>> implements Transformation<R> {
+public class MorphlineTransform<R extends ConnectRecord<R>> implements Transformation<R> {
     private static final Logger log = LoggerFactory.getLogger(MorphlineTransform.class);
     
     private static final Object LOCK = new Object();
@@ -204,47 +204,4 @@ public abstract class MorphlineTransform<R extends ConnectRecord<R>> implements 
         return CONFIG_DEF;
     }
 
-    protected abstract Schema operatingSchema(R record);
-
-    protected abstract Object operatingValue(R record);
-
-    protected abstract R newRecord(R record, Schema updatedSchema, Object updatedValue);
-
-    public static class Key<R extends ConnectRecord<R>> extends MorphlineTransform<R> {
-
-        @Override
-        protected Schema operatingSchema(R record) {
-            return record.keySchema();
-        }
-
-        @Override
-        protected Object operatingValue(R record) {
-            return record.key();
-        }
-
-        @Override
-        protected R newRecord(R record, Schema updatedSchema, Object updatedValue) {
-            return record.newRecord(record.topic(), record.kafkaPartition(), updatedSchema, updatedValue, record.valueSchema(), record.value(), record.timestamp());
-        }
-
-    }
-
-    public static class Value<R extends ConnectRecord<R>> extends MorphlineTransform<R> {
-
-        @Override
-        protected Schema operatingSchema(R record) {
-            return record.valueSchema();
-        }
-
-        @Override
-        protected Object operatingValue(R record) {
-            return record.value();
-        }
-
-        @Override
-        protected R newRecord(R record, Schema updatedSchema, Object updatedValue) {
-            return record.newRecord(record.topic(), record.kafkaPartition(), record.keySchema(), record.key(), updatedSchema, updatedValue, record.timestamp());
-        }
-
-    }
 }
