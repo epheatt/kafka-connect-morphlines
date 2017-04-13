@@ -67,12 +67,15 @@ public class MorphlineSinkTask<T extends MorphlineSinkConnectorConfig> extends S
     private static final Logger log = LoggerFactory.getLogger(MorphlineSinkTask.class);
 
     protected MorphlineSinkConnectorConfig config;
+    private Map<String, Object> morphlineSettings;
     private MorphlineContext morphlineContext;
     private Command morphline;
     private Command finalChild;
     private String morphlineFileAndId;
-
+    private MorphlineProducer morphlineProducer;
+    
     protected MorphlineSinkConnectorConfig config(Map<String, String> settings) {
+        morphlineSettings = new HashMap<String, Object>();
         return new MorphlineSinkConnectorConfig(settings);
     }
 
@@ -100,16 +103,17 @@ public class MorphlineSinkTask<T extends MorphlineSinkConnectorConfig> extends S
         log.debug("Running: " + morphlineFileAndId);
 
         if (morphlineContext == null) {
-            morphlineContext = new MorphlineContext.Builder().build();
+            morphlineContext = new MorphlineContext.Builder().setSettings(morphlineSettings).build();
         }
-        Config override = ConfigFactory.parseMap(getByPrefix(settings, "morphlines")).getConfig("morphlines");
-        if (finalChild == null && override.hasPath("topic") && override.getString("topic") != null) {
-            finalChild = new FinalCollector(override);
-        }
+        Config override = ConfigFactory.parseMap(getByPrefix(settings, "morphlines")).getConfig("morphlines").resolve();
         log.debug("Overide Settings for Morphlines Task: " + override);
         
         morphline = MorphlineTransform.compile(getClass(), morphlineFilePath, morphlineId, morphlineContext, finalChild, override);
-        
+        if (morphlineSettings.get("kafkaProducerProps") != null) {
+            log.info("kafka producer found " + morphlineSettings.get("kafkaProducerProps"));
+            morphlineProducer = new MorphlineProducer((java.util.Properties) morphlineSettings.get("kafkaProducerProps") );
+            morphlineSettings.put("kafkaProducer",morphlineProducer);
+        }
     }
     
     private static HashMap<String, String> getByPrefix(Map<String, String> myMap, String prefix) {
@@ -148,6 +152,8 @@ public class MorphlineSinkTask<T extends MorphlineSinkConnectorConfig> extends S
     public void stop() {
         if (morphline != null)
             Notifications.notifyShutdown(morphline);
+        if (morphlineProducer != null)
+            morphlineProducer.close();
     }
 
     @Override

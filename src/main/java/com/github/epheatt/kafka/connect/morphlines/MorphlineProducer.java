@@ -32,16 +32,16 @@ import java.util.Random;
 public class MorphlineProducer {
     private static final Logger log = LoggerFactory.getLogger(MorphlineProducer.class);
     
-    private Producer<String, Object> producer;
+    private Producer<Object, Object> producer;
     private Properties settings;
     
     public MorphlineProducer(Properties props) {
         this.settings = props;
-        this.producer = new KafkaProducer<String, Object>(settings);
+        this.producer = new KafkaProducer<Object, Object>(settings);
     }
     
-    public void publish(String topic, Integer partition, Long timestamp, Object key, Schema schema, Object value) {
-        producer.send(new ProducerRecord(topic, partition, timestamp, key, value));
+    public void publish(String topic, Integer partition, Long timestamp, Schema keySchema, Object key, Schema valueSchema, Object value) {
+        producer.send(new ProducerRecord<Object, Object>(topic, partition, timestamp, key, value));
     }
     
     public void close() {

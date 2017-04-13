@@ -112,8 +112,9 @@ public final class KafkaDataProducerCommandBuilder implements CommandBuilder {
         private final org.apache.avro.Schema keyFixedSchema;
         private final org.apache.avro.Schema valueFixedSchema;
         private final Charset characterSet;
+        private final String kafkaMethod;
         private final String kafkaRestUrl;
-        private final MorphlineProducer producer;
+        //private final MorphlineProducer producer;
         private static final AvroData AVRO_CONVERTER;
         static {
             AVRO_CONVERTER = new AvroData(new AvroDataConfig.Builder()
@@ -123,7 +124,6 @@ public final class KafkaDataProducerCommandBuilder implements CommandBuilder {
         
         public KafkaDataProducer(CommandBuilder builder, Config config, Command parent, Command child, MorphlineContext context) {
             super(builder, config, parent, child, context);
-            
             this.topic = getConfigs().getString(config, "topic", null);
             this.topicField = getConfigs().getString(config, "topicField", null);
             if (topic == null && topicField == null) {
@@ -231,6 +231,12 @@ public final class KafkaDataProducerCommandBuilder implements CommandBuilder {
             }
             
             this.kafkaRestUrl = getConfigs().getString(propsConfig, "kafka-rest-url", null);
+            String kafkaMethod = getConfigs().getString(propsConfig, "method", null);
+            if (kafkaRestUrl != null) { 
+                this.kafkaMethod = "REST";
+            } else {
+                this.kafkaMethod = kafkaMethod;
+            }
             String bootstrapServers = getConfigs().getString(propsConfig, "bootstrap-servers", null);
             String schemaRegistryUrl = getConfigs().getString(propsConfig, "schema-registry-url", null);
             if (kafkaRestUrl == null && (bootstrapServers == null || schemaRegistryUrl == null)) {
@@ -244,7 +250,9 @@ public final class KafkaDataProducerCommandBuilder implements CommandBuilder {
             if (!props.containsKey("retries")) props.put("retries", 0);
             if (!props.containsKey("key.serializer")) props.put("key.serializer", "io.confluent.kafka.serializers.KafkaAvroSerializer");
             if (!props.containsKey("value.serializer")) props.put("value.serializer", "io.confluent.kafka.serializers.KafkaAvroSerializer");
-            this.producer = new MorphlineProducer(props);
+            if (kafkaMethod == null && bootstrapServers != null && schemaRegistryUrl != null)
+                context.getSettings().put("kafkaProducerProps", props);
+            //this.producer = new MorphlineProducer(props);
         }
         
         @Override
@@ -291,17 +299,22 @@ public final class KafkaDataProducerCommandBuilder implements CommandBuilder {
             Object value = inputRecord.getFirstValue(valueField != null ? valueField : Fields.ATTACHMENT_BODY);
             log.debug("producer value: " + value);
             ProducerData data = new ProducerData(new KafkaRecord(value, key), (keySchema != null ? keySchema.toString() : null), null, valueSchema.toString(), null);
-            Object response = publish(mapper, kafkaRestUrl, topic, partition, timestamp, data);
-            log.debug("producer response: " + response);
-            if (response != null && response instanceof ProducerException) {
-                if (((ProducerException) response).errorCode == 50003) {
-                    //retry once
-                    response = publish(mapper, kafkaRestUrl, topic, partition, timestamp, data);
-                    if (response != null && response instanceof ProducerException) {
+            if (kafkaMethod == null && getContext().getSettings().get("kafkaProducerProps") != null && getContext().getSettings().get("kafkaProducer") != null) {
+                MorphlineProducer producer = (MorphlineProducer) getContext().getSettings().get("kafkaProducer");
+                producer.publish(topic, partition, timestamp, keySchema, key, valueSchema, value);
+            } else {
+                Object response = publish(mapper, kafkaRestUrl, topic, partition, timestamp, data);
+                log.debug("producer response: " + response);
+                if (response != null && response instanceof ProducerException) {
+                    if (((ProducerException) response).errorCode == 50003) {
+                        //retry once
+                        response = publish(mapper, kafkaRestUrl, topic, partition, timestamp, data);
+                        if (response != null && response instanceof ProducerException) {
+                            throw (ProducerException) response;
+                        }
+                    } else {
                         throw (ProducerException) response;
                     }
-                } else {
-                    throw (ProducerException) response;
                 }
             }
             return super.doProcess(inputRecord);
