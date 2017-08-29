@@ -42,7 +42,7 @@
 	</issueManagement>
 
 	<properties>
-		<kafka.version>0.10.2.0</kafka.version>
+		<kafka.version>0.11.0.0-cp1</kafka.version>
 		<confluent.version>3.3.0</confluent.version>
 		<morphlines.version>1.1.0</morphlines.version>
 		<solr.version>6.4.2</solr.version>
