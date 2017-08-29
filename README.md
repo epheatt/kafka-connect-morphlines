@@ -13,6 +13,19 @@ There is also a docker-compose script with configuration for zookeeper, kafka an
 mvn clean package
 rm target/original-kafka-connect-morphlines-0.1-SNAPSHOT.jar
 cp config/cloudsolr.conf target/
+
+docker-compose up kafka
+
+docker run -it \
+  --link=kafkaconnectmorphlines_zookeeper_1:zookeeper \
+  --link=kafkaconnectmorphlines_kafka_1:kafka \
+  --rm \
+  confluentinc/cp-kafka:3.3.0 bash
+
+kafka-topics --create --zookeeper zookeeper:2181 --topic connect-config --replication-factor 1 --partitions 1 --config cleanup.policy=compact
+kafka-topics --create --zookeeper zookeeper:2181 --topic connect-offsets --replication-factor 1 --partitions 50 --config cleanup.policy=compact
+kafka-topics --create --zookeeper zookeeper:2181 --topic connect-status --replication-factor 1 --partitions 10 --config cleanup.policy=compact  
+
 docker-compose up kafka-connect
 
 docker exec -it kafkaconnectmorphlines_solr_1 bin/solr create -c twitter
@@ -117,7 +130,7 @@ docker run -it \
   --link=kafkaconnectmorphlines_schema-registry_1:schema-registry \
   --link=kafkaconnectmorphlines_kafka_1:kafka \
   --rm \
-  confluentinc/cp-schema-registry:3.2.0 bash
+  confluentinc/cp-schema-registry:3.3.0 bash
 
 /usr/bin/kafka-avro-console-producer   --broker-list kafka:9092 --property schema.registry.url=http://schema-registry:8081 --topic twitter-string  --property value.schema='{"type":"string"}'
 "{""name"":""quickstart-string-console-source""}"
@@ -134,9 +147,10 @@ curl -X POST -H "Content-Type: application/json" \
   http://0.0.0.0:8082/connectors
   
 docker run -it \
+  --link=kafkaconnectmorphlines_zookeeper_1:zookeeper \
   --link=kafkaconnectmorphlines_kafka_1:kafka \
   --rm \
-  confluentinc/cp-kafka:3.2.0 bash
+  confluentinc/cp-kafka:3.3.0 bash
   
 /usr/bin/kafka-console-producer   --broker-list kafka:9092 --topic twitter-json
 {"name":"quickstart-json-console-source"}

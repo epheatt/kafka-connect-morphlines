@@ -43,9 +43,9 @@
 
 	<properties>
 		<kafka.version>0.10.2.0</kafka.version>
-		<confluent.version>3.2.0</confluent.version>
+		<confluent.version>3.3.0</confluent.version>
 		<morphlines.version>1.1.0</morphlines.version>
-		<solr.version>6.4.1</solr.version>
+		<solr.version>6.4.2</solr.version>
 		<guava.version>18.0</guava.version>
 		<mockito.version>2.6.3</mockito.version>
 		<junit.version>5.0.0-M3</junit.version>
@@ -207,6 +207,10 @@
 								</filter>
 							</filters>
 							<relocations>
+								<relocation>
+									<pattern>com.google.common</pattern>
+									<shadedPattern>com.github.epheatt.kafka.connect.morphlines.com.google.common</shadedPattern>
+								</relocation>
 								<relocation>
 									<pattern>com.fasterxml.jackson</pattern>
 									<shadedPattern>com.github.epheatt.kafka.connect.morphlines.com.fasterxml.jackson</shadedPattern>
