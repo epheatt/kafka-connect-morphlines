@@ -45,6 +45,7 @@
 		<kafka.version>0.11.0.0-cp1</kafka.version>
 		<confluent.version>3.3.0</confluent.version>
 		<morphlines.version>1.1.0</morphlines.version>
+		<httpcomponents.version>4.4.1</httpcomponents.version>
 		<solr.version>6.4.2</solr.version>
 		<guava.version>18.0</guava.version>
 		<mockito.version>2.6.3</mockito.version>
@@ -58,11 +59,6 @@
 			<version>${morphlines.version}</version>
 		</dependency>
 		<dependency>
-		    <groupId>org.eclipse.core</groupId>
-		    <artifactId>org.eclipse.core.runtime</artifactId>
-		    <version>[3.2.0,3.10.0)</version>
-		</dependency>
-		<dependency>
 			<groupId>org.kitesdk</groupId>
 			<artifactId>kite-morphlines-avro</artifactId>
 			<version>${morphlines.version}</version>
@@ -72,41 +68,39 @@
 			<artifactId>kite-morphlines-json</artifactId>
 			<version>${morphlines.version}</version>
 		</dependency>
-		
-		<dependency>
-			<groupId>org.apache.solr</groupId>
-			<artifactId>solr-solrj</artifactId>
-			<version>${solr.version}</version>
-		</dependency>
-		<dependency>
-			<groupId>org.apache.solr</groupId>
-			<artifactId>solr-morphlines-core</artifactId>
-			<version>${solr.version}</version>
-			<exclusions>
-				<exclusion>
-					<groupId>io.dropwizard.metrics</groupId>
-					<artifactId>*</artifactId>
-				</exclusion>
-				<exclusion>
-					<groupId>org.eclipse.jetty</groupId>
-					<artifactId>*</artifactId>
-				</exclusion>
-			</exclusions>
-		</dependency>
 
 		<dependency>
-			<groupId>io.confluent.kafka</groupId>
-			<artifactId>connect-utils</artifactId>
-			<version>[0.1.14,0.1.100)</version>
+			<groupId>org.apache.httpcomponents</groupId>
+			<artifactId>httpcore</artifactId>
+			<version>${httpcomponents.version}</version>
 		</dependency>
+		<dependency>
+			<groupId>org.apache.httpcomponents</groupId>
+			<artifactId>httpmime</artifactId>
+			<version>${httpcomponents.version}</version>
+		</dependency>
+		<dependency>
+			<groupId>org.apache.httpcomponents</groupId>
+			<artifactId>httpclient</artifactId>
+			<version>${httpcomponents.version}</version>
+		</dependency>
+
 		<dependency>
 			<groupId>com.google.guava</groupId>
 			<artifactId>guava</artifactId>
 			<version>${guava.version}</version>
 		</dependency>
-		
-		
-		
+		<dependency>
+			<groupId>org.eclipse.core</groupId>
+			<artifactId>org.eclipse.core.runtime</artifactId>
+			<version>[3.2.0,3.10.0)</version>
+		</dependency>
+		<dependency>
+			<groupId>io.confluent.kafka</groupId>
+			<artifactId>connect-utils</artifactId>
+			<version>[0.1.14,0.1.100)</version>
+		</dependency>
+
 		<dependency>
 			<groupId>org.apache.kafka</groupId>
 			<artifactId>connect-api</artifactId>
@@ -138,6 +132,28 @@
 			</exclusions> 
 		</dependency>
 
+		<dependency>
+			<groupId>org.apache.solr</groupId>
+			<artifactId>solr-solrj</artifactId>
+			<version>${solr.version}</version>
+			<scope>test</scope>
+		</dependency>
+		<dependency>
+			<groupId>org.apache.solr</groupId>
+			<artifactId>solr-morphlines-core</artifactId>
+			<version>${solr.version}</version>
+			<scope>test</scope>
+			<exclusions>
+				<exclusion>
+					<groupId>io.dropwizard.metrics</groupId>
+					<artifactId>*</artifactId>
+				</exclusion>
+				<exclusion>
+					<groupId>org.eclipse.jetty</groupId>
+					<artifactId>*</artifactId>
+				</exclusion>
+			</exclusions>
+		</dependency>
 
 		<dependency>
 			<groupId>org.junit.jupiter</groupId>
