@@ -171,7 +171,47 @@ public class MorphlineTransformTest {
         assertEquals(new Integer(42), updatedValue.getInt32("abc"));
         assertEquals(true, updatedValue.getBoolean("foo"));
     }
-    
+
+    @Test
+    public void testEnrichJson() {
+        final MorphlineTransform<SinkRecord> xform = new MorphlineTransform<>();
+
+        Map<String, String> settings = ImmutableMap.of(
+                "morphlineFile", "resource:transform.conf",
+                "morphlineId", "enrichjson"
+        );
+        xform.configure(settings);
+
+        final Schema schema = SchemaBuilder.struct()
+                .field("dont", Schema.STRING_SCHEMA)
+                .field("abc", Schema.INT32_SCHEMA)
+                .field("foo", Schema.BOOLEAN_SCHEMA)
+                .field("etc", Schema.STRING_SCHEMA)
+                .build();
+
+        final Struct value = new Struct(schema);
+        value.put("dont", "whatever");
+        value.put("abc", 42);
+        value.put("foo", true);
+        value.put("etc", "etc");
+
+        final Schema xschema = SchemaBuilder.struct()
+                .field("dont", Schema.STRING_SCHEMA)
+                .field("abc", Schema.INT32_SCHEMA)
+                .field("foo", Schema.BOOLEAN_SCHEMA)
+                .field("etc", Schema.OPTIONAL_STRING_SCHEMA)
+                .field("missing", Schema.OPTIONAL_STRING_SCHEMA)
+                .build();
+
+        final SinkRecord record = new SinkRecord("test", 0, null, null, schema, value, 0);
+        final SinkRecord transformedRecord = xform.apply(record);
+
+        final Struct updatedValue = (Struct) transformedRecord.value();
+
+        assertEquals("etc", updatedValue.getString("etc"));
+        assertEquals(null, updatedValue.get("missing"));
+    }
+
     @Test 
     public void testDrop() {
         final MorphlineTransform<SinkRecord> xform = new MorphlineTransform<>();

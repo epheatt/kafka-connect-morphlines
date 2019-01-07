@@ -71,6 +71,7 @@ public final class ToConnectDataBuilder implements CommandBuilder {
         private final Map<String, String> mappings = new HashMap<String, String>();
         private final String topicField;
         private final String schemaField;
+        private final org.apache.avro.Schema fixedSchema;
         private final String valueField;
         private final Charset characterSet;
         private static final AvroData AVRO_CONVERTER;
@@ -85,16 +86,23 @@ public final class ToConnectDataBuilder implements CommandBuilder {
 
             this.topicField = getConfigs().getString(config, "topicField", "_topic");
             this.schemaField = getConfigs().getString(config, "schemaField", null);
-            
+            String schemaString = getConfigs().getString(config, "schemaString", null);
             int numDefinitions = 0;
             if (schemaField != null) {
               numDefinitions++;
             }
+            if (schemaString != null) {
+                numDefinitions++;
+            }
             if (numDefinitions == 0) {
               throw new MorphlineCompilationException(
-                "Either schemaFile or schemaString or schemaField must be defined", config);
+                "Either schemaString or schemaField must be defined", config);
             }
-            
+            if (schemaString != null) {
+                this.fixedSchema = getSchemaFor(schemaString);
+            } else {
+                this.fixedSchema = null;
+            }
             this.valueField = getConfigs().getString(config, "valueField", "_value");
             this.characterSet = Charset.forName(getConfigs().getString(config, "characterSet", StandardCharsets.UTF_8.name()));
             
@@ -110,6 +118,15 @@ public final class ToConnectDataBuilder implements CommandBuilder {
             Record outputRecord = inputRecord.copy();
             String topic = (String) inputRecord.getFirstValue(topicField);
             Schema schema = (Schema) inputRecord.getFirstValue(schemaField);
+            Object value = inputRecord.getFirstValue(valueField != null ? valueField : Fields.ATTACHMENT_BODY);
+            if (schemaField == null && fixedSchema != null) {
+                outputRecord.replaceValues("_valueSchemaAvro", fixedSchema);
+                schema = AVRO_CONVERTER.toConnectSchema(fixedSchema);
+                outputRecord.replaceValues("_valueSchema", schema);
+            }
+            //outputRecord.replaceValues(Fields.ATTACHMENT_BODY, value);
+            return super.doProcess(outputRecord);
+            /*
             //org.apache.avro.Schema avroSchema = (org.apache.avro.Schema) inputRecord.getFirstValue(schemaField);
             if (schema == null) {
                 //schema = AVRO_CONVERTER.toConnectSchema(avroSchema);
@@ -142,8 +159,7 @@ public final class ToConnectDataBuilder implements CommandBuilder {
                 }
                 outputRecord.replaceValues(valueField, valueS);
             }
-            return super.doProcess(outputRecord);
-            /*
+
             Object value = inputRecord.getFirstValue(Fields.ATTACHMENT_BODY);
             switch (converterType.toLowerCase()) {
                 case "string":
@@ -160,7 +176,13 @@ public final class ToConnectDataBuilder implements CommandBuilder {
             return super.doProcess(outputRecord);
             */
         }
-        
+
+        private static org.apache.avro.Schema getSchemaFor(String str) {
+            org.apache.avro.Schema.Parser parser = new org.apache.avro.Schema.Parser();
+            org.apache.avro.Schema schema = parser.parse(str);
+            return schema;
+        }
+
     }
 
 }

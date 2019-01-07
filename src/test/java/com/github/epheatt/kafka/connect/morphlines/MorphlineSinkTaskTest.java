@@ -76,6 +76,7 @@ public class MorphlineSinkTaskTest {
         });
     }
 
+    @Disabled
     @Test
     public void testLoadSolr() {
         Map<String, String> settings = ImmutableMap.of(
@@ -126,7 +127,8 @@ public class MorphlineSinkTaskTest {
         records.add(Records.string().record);
         this.task.put(records);
     }
-    
+
+    @Disabled
     @Test
     public void testAvroNativeProducer() {
         Map<String, String> settings = ImmutableMap.of(
@@ -140,6 +142,7 @@ public class MorphlineSinkTaskTest {
         this.task.put(records);
     }
 
+    @Disabled
     @Test
     public void testAvroRestProducer() {
         Map<String, String> settings = ImmutableMap.of(

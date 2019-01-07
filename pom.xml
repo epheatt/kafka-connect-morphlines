@@ -49,7 +49,9 @@
 		<solr.version>6.4.2</solr.version>
 		<guava.version>18.0</guava.version>
 		<mockito.version>2.6.3</mockito.version>
-		<junit.version>5.0.0-M3</junit.version>
+		<junit.jupiter.version>5.0.0-RC3</junit.jupiter.version>
+		<junit.platform.version>1.0.0-RC3</junit.platform.version>
+		<junit.vintage.version>4.12.0-RC3</junit.vintage.version>
 		<junit.surefire.plugin.version>1.0.0-M3</junit.surefire.plugin.version>
 	</properties>
 	<dependencies>
@@ -158,13 +160,13 @@
 		<dependency>
 			<groupId>org.junit.jupiter</groupId>
 			<artifactId>junit-jupiter-engine</artifactId>
-			<version>${junit.version}</version>
+			<version>${junit.jupiter.version}</version>
 			<scope>test</scope>
 		</dependency>
 		<dependency>
 			<groupId>org.junit.jupiter</groupId>
 			<artifactId>junit-jupiter-api</artifactId>
-			<version>${junit.version}</version>
+			<version>${junit.jupiter.version}</version>
 			<scope>test</scope>
 		</dependency>
 		<dependency>
