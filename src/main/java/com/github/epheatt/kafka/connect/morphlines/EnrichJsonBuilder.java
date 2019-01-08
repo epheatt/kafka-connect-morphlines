@@ -2,6 +2,7 @@ package com.github.epheatt.kafka.connect.morphlines;
 
 import java.io.IOException;
 import java.time.Instant;
+import java.time.format.DateTimeParseException;
 import java.util.Collection;
 import java.util.Collections;
 
@@ -10,6 +11,7 @@ import io.confluent.connect.avro.AvroData;
 import io.confluent.connect.avro.AvroDataConfig;
 import org.apache.avro.Schema;
 import org.apache.avro.Schema.Type;
+import org.apache.kafka.connect.errors.RetriableException;
 import org.kitesdk.morphline.api.Command;
 import org.kitesdk.morphline.api.CommandBuilder;
 import org.kitesdk.morphline.api.MorphlineCompilationException;
@@ -262,7 +264,7 @@ public class EnrichJsonBuilder implements CommandBuilder {
 				if (fieldValue != null) {
 					if(isUnionSubtype) {
 						ObjectNode innerNode = mapper.createObjectNode();
-						innerNode.put(Type.STRING.getName(), fieldValue.asText());
+						innerNode.put(Schema.Type.STRING.getName(), fieldValue.asText());
 						updatedNode.set(fieldName, innerNode);	
 					} else {
 						updatedNode.put(fieldName, fieldValue.asText());
@@ -278,7 +280,7 @@ public class EnrichJsonBuilder implements CommandBuilder {
 				if (intValue != null) {
 					if(isUnionSubtype) {
 						ObjectNode innerNode = mapper.createObjectNode();
-						innerNode.put(Type.INT.getName(), intValue.asInt());
+						innerNode.put(Schema.Type.INT.getName(), intValue.asInt());
 						updatedNode.set(fieldName, innerNode);	
 					} else {
 						updatedNode.put(fieldName, intValue.asInt());
@@ -292,13 +294,19 @@ public class EnrichJsonBuilder implements CommandBuilder {
 				if (longValue != null) {
 					long longVal;
 					if (TIMESTAMP_MILLIS.equals(valueSchema.getProp("logicalType"))) {
-						longVal = Instant.parse(longValue.asText()).toEpochMilli();
+					    try {
+					        longVal = Instant.parse(longValue.asText()).toEpochMilli();
+					    } catch (DateTimeParseException e) {
+					    	log.error("Incorrect date string in record : " + longValue);
+					        updatedNode.set(fieldName, null);
+					        break;
+					    }
 					} else {
 						longVal = longValue.asLong();
 					}
 					if(isUnionSubtype) {
 						ObjectNode innerNode = mapper.createObjectNode();
-						innerNode.put(Type.LONG.getName(), longVal);
+						innerNode.put(Schema.Type.LONG.getName(), longVal);
 						updatedNode.set(fieldName, innerNode);	
 					} else {
 						updatedNode.put(fieldName, longVal);
@@ -312,7 +320,7 @@ public class EnrichJsonBuilder implements CommandBuilder {
 				if (doubleValue != null) {
 					if(isUnionSubtype) {
 						ObjectNode innerNode = mapper.createObjectNode();
-						innerNode.put(Type.DOUBLE.getName(), doubleValue.asDouble());
+						innerNode.put(Schema.Type.DOUBLE.getName(), doubleValue.asDouble());
 						updatedNode.set(fieldName, innerNode);	
 					} else {
 						updatedNode.put(fieldName, doubleValue.asDouble());
@@ -326,7 +334,7 @@ public class EnrichJsonBuilder implements CommandBuilder {
 				if (boolValue != null) {
 					if(isUnionSubtype) {
 						ObjectNode innerNode = mapper.createObjectNode();
-						innerNode.put(Type.BOOLEAN.getName(), boolValue.asBoolean());
+						innerNode.put(Schema.Type.BOOLEAN.getName(), boolValue.asBoolean());
 						updatedNode.set(fieldName, innerNode);	
 					} else {
 						updatedNode.put(fieldName, boolValue.asBoolean());
@@ -373,7 +381,7 @@ public class EnrichJsonBuilder implements CommandBuilder {
 				for (JsonNode arrayElement : arrayValue) {
 					if (!arrayElement.isNull()) {
 						ObjectNode innerNode = mapper.createObjectNode();
-						if (unionSch.getType().getName().equals(Type.RECORD.name().toLowerCase())) {
+						if (unionSch.getType().getName().equals(Schema.Type.RECORD.name().toLowerCase())) {
 							ObjectNode recordValueNode = mapper.createObjectNode();
 							recordValueNode.set(field.name(), arrayElement);
 							updateValueAsPerAvroSchema(field, unionSch, (ObjectNode) recordValueNode, innerNode,
@@ -388,7 +396,7 @@ public class EnrichJsonBuilder implements CommandBuilder {
 				}
 				if (isUnionSubtype) {
 					ObjectNode outerNode = mapper.createObjectNode();
-					outerNode.set(Type.ARRAY.getName(), updatedArrayNode);
+					outerNode.set(Schema.Type.ARRAY.getName(), updatedArrayNode);
 					updatedNode.set(fieldName, outerNode);
 				} else {
 					updatedNode.set(fieldName, updatedArrayNode);

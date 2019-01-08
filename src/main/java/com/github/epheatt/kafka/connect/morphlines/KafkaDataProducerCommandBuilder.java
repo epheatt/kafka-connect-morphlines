@@ -36,6 +36,7 @@ import org.apache.http.impl.client.HttpClientBuilder;
 import org.apache.http.message.BasicHeader;
 import org.apache.kafka.connect.data.SchemaBuilder;
 import org.apache.kafka.connect.data.Struct;
+import org.apache.kafka.connect.errors.RetriableException;
 import org.apache.kafka.connect.json.JsonConverter;
 import org.apache.kafka.connect.storage.Converter;
 
@@ -110,8 +111,8 @@ public final class KafkaDataProducerCommandBuilder implements CommandBuilder {
         private final String valueField;
         private final String keySchemaField;
         private final String valueSchemaField;
-        private final Schema keyFixedSchema;
-        private final Schema valueFixedSchema;
+        private final org.apache.avro.Schema keyFixedSchema;
+        private final org.apache.avro.Schema valueFixedSchema;
         private final Charset characterSet;
         private final String kafkaMethod;
         private final String kafkaRestUrl;
@@ -281,7 +282,7 @@ public final class KafkaDataProducerCommandBuilder implements CommandBuilder {
             }
             log.debug("producer key: " + key);
             Preconditions.checkNotNull(topic);
-            Schema keySchema;
+            org.apache.avro.Schema keySchema;
             if (keySchemaField != null) {
             	Object schema = inputRecord.getFirstValue(keySchemaField);
             	if(schema instanceof org.apache.kafka.connect.data.Schema)
@@ -293,7 +294,7 @@ public final class KafkaDataProducerCommandBuilder implements CommandBuilder {
                 keySchema = keyFixedSchema;
             }
             log.debug("producer keySchema: " + keySchema);
-            Schema valueSchema;
+            org.apache.avro.Schema valueSchema;
             if (valueSchemaField != null) {
             	Object schema = inputRecord.getFirstValue(valueSchemaField);
             	if(schema instanceof org.apache.kafka.connect.data.Schema)
@@ -361,23 +362,26 @@ public final class KafkaDataProducerCommandBuilder implements CommandBuilder {
                         
                     }
                 }
+            } catch (IOException e) {
+            	// retry in case of rest connection error
+            	throw new RetriableException(e);
             } catch (Exception e) {
-                
+            	throw new ProducerException(e.getMessage(), 500l);
             } finally {
                 //httpClient.getConnectionManager().shutdown();
             }
             return result;
         }
         
-        private static Schema getSchemaFor(String str) {
-            Parser parser = new Parser();
-            Schema schema = parser.parse(str);
+        private static org.apache.avro.Schema getSchemaFor(String str) {
+            org.apache.avro.Schema.Parser parser = new org.apache.avro.Schema.Parser();
+            org.apache.avro.Schema schema = parser.parse(str);
             return schema;
-        }
+          }
 
-        private static Schema getSchemaFor(File file) {
-            Parser parser = new Parser();
-            Schema schema;
+        private static org.apache.avro.Schema getSchemaFor(File file) {
+            org.apache.avro.Schema.Parser parser = new org.apache.avro.Schema.Parser();
+            org.apache.avro.Schema schema;
             try {
               schema = parser.parse(file);
             } catch (IOException e) {
@@ -386,9 +390,9 @@ public final class KafkaDataProducerCommandBuilder implements CommandBuilder {
             return schema;
           }
 
-        private static Schema getSchemaFor(InputStream stream) {
-            Parser parser = new Parser();
-            Schema schema;
+        private static org.apache.avro.Schema getSchemaFor(InputStream stream) {
+            org.apache.avro.Schema.Parser parser = new org.apache.avro.Schema.Parser();
+            org.apache.avro.Schema schema;
             try {
                 schema = parser.parse(stream);
             } catch (IOException e) {
@@ -397,7 +401,7 @@ public final class KafkaDataProducerCommandBuilder implements CommandBuilder {
             return schema;
         }
 
-        private static Schema getSchemaFor(URL url) {
+        private static org.apache.avro.Schema getSchemaFor(URL url) {
             InputStream in = null;
             try {
                 in = url.openStream();

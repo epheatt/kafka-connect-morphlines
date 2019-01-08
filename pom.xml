@@ -52,7 +52,7 @@
 		<junit.jupiter.version>5.0.0-RC3</junit.jupiter.version>
 		<junit.platform.version>1.0.0-RC3</junit.platform.version>
 		<junit.vintage.version>4.12.0-RC3</junit.vintage.version>
-		<junit.surefire.plugin.version>1.0.0-M3</junit.surefire.plugin.version>
+		<junit.surefire.plugin.version>1.0.0-RC3</junit.surefire.plugin.version>
 	</properties>
 	<dependencies>
 		<dependency>
